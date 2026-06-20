@@ -4,11 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RC Esports Management Portal</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Supabase Core Client CDN Library -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
@@ -42,11 +46,13 @@
 </head>
 <body class="h-full text-slate-200 antialiased selection:bg-cyber-neon selection:text-black">
 
+    <!-- LOADING SHIELD OVERLAY INDICATOR -->
     <div id="loadingOverlay" class="fixed inset-0 bg-black/80 z-[100] flex flex-col items-center justify-center space-y-3 hidden">
         <div class="animate-spin rounded-full h-12 w-12 border-2 border-t-cyber-neon border-cyber-border"></div>
         <p class="heading-cyber text-xs font-bold text-cyber-neon uppercase tracking-widest">Synchronizing Live Database...</p>
     </div>
 
+    <!-- TOP NAVIGATION BAR -->
     <nav class="bg-cyber-surface border-b border-cyber-border sticky top-0 z-50 px-4 lg:px-8 py-3 flex items-center justify-between">
         <div class="flex items-center space-x-3">
             <div class="relative w-12 h-12 flex items-center justify-center bg-cyber-card border border-cyber-neon/40 rounded-xl overflow-hidden shadow-md shadow-cyber-neon/5">
@@ -79,8 +85,10 @@
         </div>
     </nav>
 
+    <!-- MAIN FRAME ROUTER CONTENT -->
     <main class="max-w-7xl mx-auto px-4 lg:px-8 py-8 min-h-[calc(100vh-70px)] flex flex-col justify-center">
 
+        <!-- ==================== VIEW 1: GLOBAL EMAIL ENTRY ==================== -->
         <div id="view-auth" class="max-w-md w-full mx-auto space-y-6 py-8">
             <div class="text-center space-y-3">
                 <div class="relative w-24 h-24 mx-auto bg-cyber-surface border-2 border-cyber-border rounded-2xl overflow-hidden shadow-2xl flex items-center justify-center group">
@@ -107,6 +115,7 @@
             </div>
         </div>
 
+        <!-- ==================== VIEW 2: RECRUITMENT SELECTION ==================== -->
         <div id="view-portal" class="hidden space-y-10">
             <div class="text-center max-w-2xl mx-auto space-y-4 py-4">
                 <span class="px-3 py-1 rounded-full text-xs font-semibold bg-cyber-neon/10 text-cyber-neon border border-cyber-neon/30 tracking-wide uppercase">Profile Active</span>
@@ -160,6 +169,7 @@
                 </div>
             </div>
 
+            <!-- Application Form Container -->
             <div id="form-container" class="hidden max-w-2xl mx-auto bg-cyber-surface border border-cyber-border rounded-2xl p-6 md:p-8 shadow-2xl relative">
                 <div class="absolute top-4 right-4 bg-cyber-card px-3 py-1 rounded-md text-xs font-semibold border border-cyber-border text-cyber-neon" id="selected-role-badge">
                     Selected Role
@@ -250,6 +260,7 @@
             </div>
         </div>
 
+        <!-- ==================== VIEW 3: APPLICATION PENDING ==================== -->
         <div id="view-pending" class="hidden max-w-xl w-full mx-auto text-center space-y-6 py-12">
             <div class="relative inline-block">
                 <div class="w-20 h-20 bg-amber-500/10 border-2 border-amber-500/30 rounded-full flex items-center justify-center text-amber-500 animate-pulse mx-auto">
@@ -267,14 +278,17 @@
             </div>
         </div>
 
+        <!-- ==================== VIEW 4: VERIFIED EMPLOYEE ACTIVE WORKSPACE ==================== -->
         <div id="view-approved" class="hidden max-w-4xl w-full mx-auto space-y-6 py-4">
             
+            <!-- ANNOUNCEMENTS AREA FOR STAFF -->
             <div class="bg-cyber-surface border border-amber-500/30 p-5 rounded-2xl space-y-3">
                 <h3 class="heading-cyber text-xs font-bold text-amber-400 uppercase tracking-widest flex items-center">
                     <i class="fa-solid fa-bullhorn mr-2"></i> Official Core Announcements
                 </h3>
                 <div id="staff-announcements-box" class="space-y-3 max-h-40 overflow-y-auto custom-scrollbar pr-1 text-xs">
-                    </div>
+                    <!-- Announcements fetch dynamically -->
+                </div>
             </div>
 
             <div class="bg-gradient-to-b from-cyber-surface to-[#0e1017] border border-cyber-border rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-2xl space-y-6">
@@ -330,6 +344,7 @@
                     </div>
                 </div>
 
+                <!-- STAFF VIEW OF PERSONAL CHAT HUB -->
                 <div class="p-4 bg-cyber-card border border-cyber-border rounded-2xl space-y-3">
                     <h3 class="heading-cyber text-xs font-bold text-cyber-neon uppercase tracking-widest"><i class="fa-solid fa-comments mr-2"></i> Management Core Chat Desk</h3>
                     <div id="staff-chat-messages-container" class="space-y-2 max-h-48 overflow-y-auto p-3 bg-cyber-bg rounded-xl text-xs custom-scrollbar"></div>
@@ -339,11 +354,13 @@
                     </form>
                 </div>
 
+                <!-- APPROVED STAFF MEMBER DIRECTORY VIEW -->
                 <div class="p-4 bg-cyber-card border border-cyber-border rounded-2xl space-y-3">
                     <h3 class="heading-cyber text-xs font-bold text-white uppercase tracking-widest"><i class="fa-solid fa-users mr-2"></i> Active Staff Directory</h3>
                     <div id="staff-directory-list" class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs"></div>
                 </div>
 
+                <!-- Command Links -->
                 <div class="p-5 bg-cyber-card border border-cyber-neon/20 rounded-2xl space-y-4">
                     <h3 class="heading-cyber text-xs font-bold text-white uppercase tracking-widest flex items-center text-cyber-neon">
                         <i class="fa-solid fa-link mr-2"></i> Management Command Links
@@ -364,6 +381,7 @@
                     </div>
                 </div>
 
+                <!-- RULES HANDBOOK COMPONENT FRAME -->
                 <div class="p-6 bg-cyber-card border border-cyber-border rounded-2xl space-y-4">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-cyber-border pb-3 gap-2">
                         <h3 class="heading-cyber text-xs font-bold text-white uppercase tracking-widest flex items-center text-rose-400">
@@ -409,6 +427,7 @@
             </div>
         </div>
 
+        <!-- ==================== VIEW 5: STAFF TERMINAL LOGIN ==================== -->
         <div id="view-login" class="hidden max-w-md w-full mx-auto py-6">
             <div class="bg-cyber-surface border border-cyber-border rounded-2xl p-6 md:p-8 shadow-2xl space-y-6">
                 <div class="text-center space-y-2">
@@ -436,6 +455,7 @@
             </div>
         </div>
 
+        <!-- ==================== VIEW 6: MANAGEMENT CONSOLE DASHBOARD ==================== -->
         <div id="view-dashboard" class="hidden space-y-8 py-4">
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <div class="bg-cyber-surface border border-cyber-border p-4 rounded-xl flex items-center justify-between">
@@ -468,6 +488,7 @@
                 </div>
             </div>
 
+            <!-- Tabs Navigation -->
             <div class="flex border-b border-cyber-border space-x-6">
                 <button onclick="switchDashTab('applicants')" id="tab-applicants-btn" class="border-b-2 border-cyber-neon text-white text-sm font-bold pb-3 flex items-center px-1">
                     <i class="fa-solid fa-users-viewfinder mr-2 text-cyber-neon"></i> Recruitment Desk
@@ -483,6 +504,7 @@
                 </button>
             </div>
 
+            <!-- TAB CONTAINER: RECRUITMENT DESK -->
             <div id="dash-tab-applicants" class="space-y-4">
                 <div class="bg-cyber-surface p-4 border border-cyber-border rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-3">
                     <div class="relative flex-1 max-w-md">
@@ -507,6 +529,7 @@
                 <div id="applicants-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
             </div>
 
+            <!-- TAB CONTAINER: ROSTER MATRIX WORKSPACE -->
             <div id="dash-tab-staff" class="hidden bg-cyber-surface border border-cyber-border rounded-xl overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-xs border-collapse">
@@ -523,6 +546,7 @@
                 </div>
             </div>
 
+            <!-- ANNOUNCEMENT ENGINE SUITE FOR ADMINS -->
             <div id="dash-tab-announcements" class="hidden bg-cyber-surface border border-cyber-border rounded-xl p-6 space-y-4">
                 <h3 class="heading-cyber text-sm font-bold text-white">Publish New BroadCast</h3>
                 <form onsubmit="postAnnouncement(event)" class="space-y-3 text-xs">
@@ -532,6 +556,7 @@
                 </form>
             </div>
 
+            <!-- TAB CONTAINER: AUDIT LOG STREAMS -->
             <div id="dash-tab-logs" class="hidden bg-cyber-surface border border-cyber-border rounded-xl p-6 space-y-4">
                 <div class="flex items-center justify-between border-b border-cyber-border pb-3">
                     <h3 class="heading-cyber text-sm font-bold text-white">Activity Logs Database</h3>
@@ -542,6 +567,7 @@
         </div>
     </main>
 
+    <!-- ADMIN CHAT LIGHTBOX POP-UP MODAL -->
     <div id="admin-chat-modal" class="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 hidden">
         <div class="bg-cyber-surface border border-cyber-border rounded-2xl max-w-lg w-full p-6 space-y-4 relative shadow-2xl flex flex-col max-h-[85vh]">
             <button onclick="closeAdminChatModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
@@ -554,6 +580,7 @@
         </div>
     </div>
 
+    <!-- INFO POP-UP MODAL -->
     <div id="info-modal" class="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 hidden">
         <div class="bg-cyber-surface border border-cyber-border rounded-2xl max-w-lg w-full p-6 space-y-4 relative shadow-2xl">
             <button onclick="closeInfoModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
@@ -562,11 +589,13 @@
         </div>
     </div>
 
+    <!-- TOAST UTILITY -->
     <div id="toast" class="fixed bottom-5 right-5 z-50 bg-cyber-card border border-cyber-neon/30 text-white px-5 py-3.5 rounded-xl shadow-2xl flex items-center space-x-3 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
         <i id="toast-icon" class="fa-solid fa-circle-check text-cyber-neon text-lg"></i>
         <p id="toast-msg" class="text-xs font-medium"></p>
     </div>
 
+    <!-- PERSISTENT ROUTED CLOUD REALTIME CONNECTION ENGINE -->
     <script>
         const SUPABASE_URL = "https://ippxcvcouyjohcxppllm.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlwcHhjdmNvdXlqb2hjeHBwbGxtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NDczMDAsImV4cCI6MjA5NzUyMzMwMH0.tWJIoV0ZflTFSX-qHlbvi-vIAzsS78hQ52rpyaX-14U";
@@ -578,33 +607,25 @@
         let runtime_selectedPosition = null;
         let activeAdminChatStaffId = null;
 
-        // TRACK ACTIVE VIEW ID FOR POPSTATE ROUTING ENGINE
         let activeViewTracker = "auth"; 
 
         window.addEventListener('DOMContentLoaded', async () => {
             await syncWithCloudDatabase();
-            // Setup early initialization push to build window pop history state tracking map frames
             window.history.replaceState({ activeView: "auth" }, "");
             routeCurrentSessionState();
         });
 
-        // HANDLE HARDWARE BACK BUTTON CLICKS DIRECTLY WITHOUT BREAKING SANDBOX ROADS
         window.addEventListener('popstate', (event) => {
             if (event.state && event.state.activeView) {
                 const prevView = event.state.activeView;
-                
                 if (prevView === "auth") {
-                    session.authenticatedEmail = null;
-                    session.managementRole = null;
+                    session.authenticatedEmail = null; session.managementRole = null;
                 } else if (prevView === "portal") {
-                    // Force re-routing away from application view card if form input container is active
                     document.getElementById('form-container').classList.add('hidden');
                 }
-                
                 activeViewTracker = prevView;
-                routeCurrentSessionState(true); // Call bypass state push trigger flag
+                routeCurrentSessionState(true);
             } else {
-                // If history stack drops clear parameter frame defaults, default loop back to authentication base
                 goBackToMain();
             }
         });
@@ -644,14 +665,11 @@
         }
 
         function goBackToMain() {
-            session.authenticatedEmail = null; 
-            session.managementRole = null;
+            session.authenticatedEmail = null; session.managementRole = null;
             showToast("Returned safely to main node identity check.", "info");
-            pushViewToHistoryState("auth");
-            routeCurrentSessionState(true);
+            pushViewToHistoryState("auth"); routeCurrentSessionState(true);
         }
 
-        // Modified layout dispatcher router framework logic parameters
         function routeCurrentSessionState(bypassHistoryPush = false) {
             document.getElementById('view-auth').classList.add('hidden');
             document.getElementById('view-portal').classList.add('hidden');
@@ -702,15 +720,10 @@
                     document.getElementById('employee-strike-count').innerText = `${strikeCount} / 3 Strikes`;
                     document.getElementById('view-approved').classList.remove('hidden');
                     
-                    updateStaffWorkspaceButtons();
-                    renderStaffAnnouncements();
-                    renderStaffChatStream(record.id);
-                    renderStaffDirectory();
+                    updateStaffWorkspaceButtons(); renderStaffAnnouncements(); renderStaffChatStream(record.id); renderStaffDirectory();
                 }
                 return;
             }
-            
-            // Standard baseline fall through authentication tracker engine state context
             document.getElementById('view-auth').classList.remove('hidden');
             profile.classList.add('hidden');
         }
@@ -729,8 +742,7 @@
         }
 
         async function postAnnouncement(e) {
-            e.preventDefault();
-            setDisplayLoader(true);
+            e.preventDefault(); setDisplayLoader(true);
             const title = document.getElementById('announce-title').value.trim();
             const content = document.getElementById('announce-content').value.trim();
             const author = session.managementRole;
@@ -739,16 +751,14 @@
                 await supabaseClient.from('announcements').insert([{ title, content, author }]);
                 await pushLog(`New core broadcast posted: "${title}"`, author);
                 await syncWithCloudDatabase();
-                document.getElementById('announce-title').value = "";
-                document.getElementById('announce-content').value = "";
+                document.getElementById('announce-title').value = ""; document.getElementById('announce-content').value = "";
                 showToast("Announcement live Broadcasted!", "success");
             } catch(err) { showToast("Broadcast protocol fail.", "error"); }
             setDisplayLoader(false);
         }
 
         function renderStaffDirectory() {
-            const container = document.getElementById('staff-directory-list');
-            container.innerHTML = "";
+            const container = document.getElementById('staff-directory-list'); container.innerHTML = "";
             const deployed = db.applicants.filter(a => a.status === 'Approved');
             deployed.forEach(s => {
                 container.innerHTML += `
@@ -760,8 +770,7 @@
         }
 
         function renderStaffChatStream(staffId) {
-            const container = document.getElementById('staff-chat-messages-container');
-            container.innerHTML = "";
+            const container = document.getElementById('staff-chat-messages-container'); container.innerHTML = "";
             const filtered = db.staffMessages.filter(m => m.staff_id == staffId);
             if(filtered.length === 0) { container.innerHTML = `<p class="text-cyber-textMuted text-center py-2">Secure node idle. Drop lines to verify updates.</p>`; return; }
             filtered.forEach(m => {
@@ -774,63 +783,45 @@
         }
 
         async function sendStaffChatMessage(e) {
-            e.preventDefault();
-            const input = document.getElementById('staff-chat-input');
-            const msgText = input.value.trim();
-            if(!msgText) return;
-
-            const record = db.applicants.find(a => a.email.toLowerCase() === session.authenticatedEmail.toLowerCase());
-            if(!record) return;
+            e.preventDefault(); const input = document.getElementById('staff-chat-input'); const msgText = input.value.trim(); if(!msgText) return;
+            const record = db.applicants.find(a => a.email.toLowerCase() === session.authenticatedEmail.toLowerCase()); if(!record) return;
 
             try {
                 await supabaseClient.from('staff_messages').insert([{ staff_id: record.id, sender_role: 'STAFF', sender_name: record.discordName, message_text: msgText }]);
-                await syncWithCloudDatabase();
-                renderStaffChatStream(record.id);
-                input.value = "";
+                await syncWithCloudDatabase(); renderStaffChatStream(record.id); input.value = "";
             } catch(err) { showToast("Message transmission drop.", "error"); }
         }
 
         function openAdminChatBox(staffId, staffName) {
             activeAdminChatStaffId = staffId;
             document.getElementById('admin-chat-title').innerText = `Direct Chat Terminal: @${staffName}`;
-            renderAdminChatStream();
-            document.getElementById('admin-chat-modal').classList.remove('hidden');
+            renderAdminChatStream(); document.getElementById('admin-chat-modal').classList.remove('hidden');
         }
 
         function renderAdminChatStream() {
-            const container = document.getElementById('admin-chat-stream');
-            container.innerHTML = "";
+            const container = document.getElementById('admin-chat-stream'); container.innerHTML = "";
             const filtered = db.staffMessages.filter(m => m.staff_id == activeAdminChatStaffId);
             if(filtered.length === 0) { container.innerHTML = `<p class="text-cyber-textMuted text-center py-4">No data logs logged inside this index shell.</p>`; return; }
             filtered.forEach(m => {
-                const isAdmin = m.sender_role !== 'STAFF';
-                const textCol = isAdmin ? "text-sky-400" : "text-cyber-neon";
+                const isAdmin = m.sender_role !== 'STAFF'; const textCol = isAdmin ? "text-sky-400" : "text-cyber-neon";
                 container.innerHTML += `<div><span class="text-[10px] text-slate-500">[${m.sender_name}]</span> <p class="inline-block ml-1 ${textCol}">${escapeHtml(m.message_text)}</p></div>`;
             });
             container.scrollTop = container.scrollHeight;
         }
 
         async function sendAdminChatMessage(e) {
-            e.preventDefault();
-            const input = document.getElementById('admin-chat-input');
-            const msgText = input.value.trim();
-            if(!msgText || !activeAdminChatStaffId) return;
-
+            e.preventDefault(); const input = document.getElementById('admin-chat-input'); const msgText = input.value.trim(); if(!msgText || !activeAdminChatStaffId) return;
             try {
                 await supabaseClient.from('staff_messages').insert([{ staff_id: activeAdminChatStaffId, sender_role: session.managementRole, sender_name: session.managementRole, message_text: msgText }]);
-                await syncWithCloudDatabase();
-                renderAdminChatStream();
-                input.value = "";
+                await syncWithCloudDatabase(); renderAdminChatStream(); input.value = "";
             } catch(err) { showToast("Failed to lock cloud msg.", "error"); }
         }
 
         function closeAdminChatModal() { document.getElementById('admin-chat-modal').classList.add('hidden'); activeAdminChatStaffId = null; }
 
         function updateStaffWorkspaceButtons() {
-            const record = db.applicants.find(a => a.email.toLowerCase() === session.authenticatedEmail.toLowerCase());
-            if (!record) return;
-            const activeBtn = document.getElementById('duty-active-btn');
-            const inactiveBtn = document.getElementById('duty-inactive-btn');
+            const record = db.applicants.find(a => a.email.toLowerCase() === session.authenticatedEmail.toLowerCase()); if (!record) return;
+            const activeBtn = document.getElementById('duty-active-btn'); const inactiveBtn = document.getElementById('duty-inactive-btn');
             if(record.isActive === undefined) record.isActive = true;
             if (record.isActive) {
                 activeBtn.className = "px-4 py-2 rounded-xl font-bold uppercase tracking-wider text-[10px] bg-cyber-neon text-black border-cyber-neon shadow-lg shadow-cyber-neon/20";
@@ -856,16 +847,15 @@
 
         async function submitLeaveRequest() {
             const record = db.applicants.find(a => a.email.toLowerCase() === session.authenticatedEmail.toLowerCase());
-            const fromDate = document.getElementById('leave-from').value;
-            const toDate = document.getElementById('leave-to').value;
+            const fromDate = document.getElementById('leave-from').value; const toDate = document.getElementById('leave-to').value;
             if (record && fromDate && toDate) {
                 setDisplayLoader(true); record.leaveFrom = fromDate; record.leaveTo = toDate;
                 try {
                     await supabaseClient.from('applicants').update({ leaveFrom: fromDate, leaveTo: toDate }).eq('id', record.id);
                     document.getElementById('clear-leave-btn').classList.remove('hidden');
                     await pushLog(`Staff member "${record.discordName}" logged leave timeline [${fromDate} to ${toDate}].`, 'STAFF');
-                    showToast("Leave timeline registered and sent to roster desk.", "warning");
-                } catch(e) { showToast("Cloud server synchronization aborted.", "error"); }
+                    showToast("Leave timeline registered.", "warning");
+                } catch(e) { showToast("Cloud synchronization aborted.", "error"); }
                 setDisplayLoader(false);
             }
         }
@@ -889,10 +879,8 @@
             e.preventDefault(); const email = document.getElementById('auth-email').value.trim();
             if (!email.toLowerCase().endsWith('@gmail.com')) { showToast("Identity Error: Requires a valid @gmail.com address.", "error"); return; }
             setDisplayLoader(true); session.authenticatedEmail = email;
-            await syncWithCloudDatabase();
-            showToast("Gmail Token linked.", "success"); setDisplayLoader(false); 
-            pushViewToHistoryState("portal");
-            routeCurrentSessionState(true);
+            await syncWithCloudDatabase(); showToast("Gmail Token linked.", "success"); setDisplayLoader(false); 
+            pushViewToHistoryState("portal"); routeCurrentSessionState(true);
         }
 
         function selectPosition(position) {
@@ -934,20 +922,15 @@
 
             try {
                 await supabaseClient.from('applicants').delete().eq('email', session.authenticatedEmail);
-                const { error } = await supabaseClient.from('applicants').insert([newApp]);
-                if (error) throw error;
+                const { error } = await supabaseClient.from('applicants').insert([newApp]); if (error) throw error;
                 await pushLog(`Application submitted by ${newApp.name} for position ${newApp.position}.`, 'APPLICANT');
                 await syncWithCloudDatabase(); showToast("Application successfully uploaded.", "success"); 
             } catch(err) { showToast("Database tracking failure.", "error"); }
-            setDisplayLoader(false); 
-            pushViewToHistoryState("pending");
-            routeCurrentSessionState(true);
+            setDisplayLoader(false); pushViewToHistoryState("pending"); routeCurrentSessionState(true);
         }
 
         function openStaffGateway() { 
-            document.getElementById('view-auth').classList.add('hidden'); 
-            document.getElementById('view-login').classList.remove('hidden'); 
-            document.getElementById('global-back-nav').classList.remove('hidden'); 
+            document.getElementById('view-auth').classList.add('hidden'); document.getElementById('view-login').classList.remove('hidden'); document.getElementById('global-back-nav').classList.remove('hidden'); 
             pushViewToHistoryState("login");
         }
 
@@ -956,17 +939,14 @@
             if((role === 'Head Operator' && password === 'head_admin#rc99') || (role === 'Operator' && password === 'operator_clearance@77')) {
                 setDisplayLoader(true); session.managementRole = role; document.getElementById('view-login').classList.add('hidden');
                 await syncWithCloudDatabase(); await pushLog(`Administrative session token verified successfully.`, role); setDisplayLoader(false); 
-                pushViewToHistoryState("dashboard");
-                routeCurrentSessionState(true);
+                pushViewToHistoryState("dashboard"); routeCurrentSessionState(true);
             } else { document.getElementById('login-error').classList.remove('hidden'); }
         }
 
         function logout() {
             if (session.managementRole) { pushLog(`Administrative terminal node released safely.`, session.managementRole); }
-            session.authenticatedEmail = null; session.managementRole = null; 
-            showToast("Logged out successfully.", "info");
-            pushViewToHistoryState("auth");
-            routeCurrentSessionState(true);
+            session.authenticatedEmail = null; session.managementRole = null; showToast("Logged out successfully.", "info");
+            pushViewToHistoryState("auth"); routeCurrentSessionState(true);
         }
 
         async function pushLog(message, actor) {
@@ -994,7 +974,7 @@
                 try {
                     await supabaseClient.from('applicants').update({ status: newStatus }).eq('id', id);
                     await pushLog(`Applicant "${applicant.name}" status changed to ${newStatus}.`, session.managementRole);
-                    await syncWithCloudDatabase(); updateStats(); renderApplicants(); renderStaffTable(); showToast(`Status updated successfully.`, "success");
+                    await syncWithCloudDatabase(); updateStats(); renderApplicants(); renderStaffTable(); showToast("Status updated successfully.", "success");
                 } catch(e) { showToast("Cloud update failed.", "error"); }
                 setDisplayLoader(false);
             }
@@ -1067,8 +1047,13 @@
                     <p><span class="text-cyber-neon font-bold">Real Name:</span> ${staff.name}</p>
                     <p><span class="text-cyber-neon font-bold">Gmail Address:</span> ${staff.email}</p>
                     <p><span class="text-cyber-neon font-bold">Discord Name:</span> ${staff.discordName}</p>
+                    <p><span class="text-cyber-neon font-bold">Discord Handle:</span> @${staff.discordUsername}</p>
                     <p><span class="text-cyber-neon font-bold">WhatsApp:</span> ${staff.whatsapp}</p>
-                    <p><span class="text-cyber-neon font-bold">Active Time:</span> ${staff.activeTime} Hrs/Day</p>
+                    <p><span class="text-cyber-neon font-bold">Instagram ID:</span> ${staff.instagram ? '@' + staff.instagram : 'Not Provided'}</p>
+                    <p><span class="text-cyber-neon font-bold">Age:</span> ${staff.age} Years</p>
+                    <p><span class="text-cyber-neon font-bold">Experience:</span> ${staff.experience} Months</p>
+                    <p><span class="text-cyber-neon font-bold">Daily Active Target:</span> ${staff.activeTime} Hrs/Day</p>
+                    <p><span class="text-cyber-neon font-bold">Calculation Allocation:</span> ${staff.calcTool || 'Not Required'}</p>
                     <p class="italic text-slate-300 bg-cyber-card p-2 rounded border border-cyber-border">"${staff.extra}"</p>
                 </div>`;
             document.getElementById('info-modal').classList.remove('hidden');
@@ -1102,7 +1087,7 @@
                 const matchesSearch = app.name.toLowerCase().includes(searchVal) || app.discordName.toLowerCase().includes(searchVal) || app.email.toLowerCase().includes(searchVal);
                 return matchesSearch && (roleFilter === 'All' || app.position === roleFilter) && (statusFilter === 'All' || app.status === statusFilter);
             });
-            if(filtered.length === 0) { container.innerHTML = `<div class="col-span-full text-center text-cyber-textMuted text-xs p-6">No matching data profiles found.</div>`; return; }
+            if(filtered.length === 0) { container.innerHTML = `<div class="col-span-full text-center text-cyber-textMuted text-xs p-6">No matching records found.</div>`; return; }
             filtered.forEach(app => {
                 let statusBadge = app.status === 'Pending' ? `<span class="bg-amber-500/10 text-amber-500 border border-amber-500/20 px-2 py-0.5 rounded text-[10px] font-semibold uppercase">Pending</span>` : `<span class="bg-rose-500/10 text-rose-500 border border-rose-500/20 px-2 py-0.5 rounded text-[10px] font-semibold uppercase">Rejected</span>`;
                 container.innerHTML += `
@@ -1127,6 +1112,7 @@
             });
         }
 
+        // FEATURE INTEGRATED: INFO BUTTON MOVED DIRECTLY NEXT TO EMPLOYEE NAME HANDLE
         function renderStaffTable() {
             const tbody = document.getElementById('staff-table-body'); tbody.innerHTML = "";
             const deployedStaff = db.applicants.filter(a => a.status === 'Approved'); if(deployedStaff.length === 0) { tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-cyber-textMuted text-xs">No personnel records found.</td></tr>`; return; }
@@ -1137,6 +1123,8 @@
                         <td class="p-4">
                             <div class="flex items-center space-x-2">
                                 <strong class="text-white">${staff.discordName}</strong>
+                                <!-- INFO BUTTON STRATEGICALLY PLACED NEXT TO THE EMPLOYEE handle DISPLAY NODE -->
+                                <button onclick="viewEmployeeDossier(${staff.id})" class="px-2 py-0.5 rounded bg-cyber-neon/10 hover:bg-cyber-neon border border-cyber-neon/20 hover:text-black text-cyber-neon text-[10px] font-black uppercase transition"><i class="fa-solid fa-address-card mr-1"></i>Info</button>
                                 <button onclick="openAdminChatBox(${staff.id}, '${staff.discordName}')" class="px-2 py-0.5 bg-sky-500/10 hover:bg-sky-500 text-sky-400 hover:text-black border border-sky-500/20 text-[10px] font-bold uppercase rounded transition"><i class="fa-solid fa-message mr-1"></i>Chat DM</button>
                             </div>
                         </td>
