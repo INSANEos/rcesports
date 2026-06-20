@@ -1,1004 +1,558 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full bg-[#0b0c10]">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RC Esports Management Portal</title>
+    <title>RC Esports - Management & Recruitment Portal</title>
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome Icons -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <!-- Supabase JS Client library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .heading-cyber { font-family: 'Orbitron', sans-serif; letter-spacing: 0.05em; }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #0b0c10; }
-        ::-webkit-scrollbar-thumb { background: #1f2330; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #10b981; }
-    </style>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        cyber: {
-                            bg: '#0b0c10',
-                            surface: '#12141c',
-                            card: '#1a1d29',
-                            discord: '#5865F2',
-                            neon: '#10b981', 
-                            neonHover: '#059669',
-                            border: '#262b3d',
-                            textMuted: '#94a3b8'
-                        }
-                    }
-                }
-            }
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background-color: #0b0c10;
         }
-    </script>
+        .heading-font {
+            font-family: 'Orbitron', sans-serif;
+        }
+        .neon-border-red {
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.5), inset 0 0 10px rgba(239, 68, 68, 0.2);
+        }
+        .neon-text-red {
+            text-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+        }
+        .neon-border-blue {
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #ef4444;
+            border-radius: 3px;
+        }
+    </style>
 </head>
-<body class="h-full text-slate-200 antialiased selection:bg-cyber-neon selection:text-black">
+<body class="text-gray-100 min-h-screen flex flex-col custom-scrollbar">
 
-    <!-- TOP NAVIGATION BAR -->
-    <nav class="bg-cyber-surface border-b border-cyber-border sticky top-0 z-50 px-4 lg:px-8 py-3 flex items-center justify-between">
-        <div class="flex items-center space-x-3">
-            <div class="relative w-12 h-12 flex items-center justify-center bg-cyber-card border border-cyber-neon/40 rounded-xl overflow-hidden shadow-md shadow-cyber-neon/5">
-                <img src="https://cdn.dribbble.com/userupload/46144465/file/a015005a12c275761a70a5290859345d.png?format=webp&resize=400x300&vertical=center" alt="RC Logo" class="object-cover w-full h-full scale-125">
+    <!-- NAVIGATION HEADER -->
+    <header class="border-b-2 border-red-600 bg-gray-950 px-4 py-3 sticky top-0 z-50 shadow-lg">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-red-600 p-2 rounded-lg animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.7)]">
+                    <i class="fa-solid fa-crosshairs text-xl text-white"></i>
+                </div>
+                <div>
+                    <h1 class="heading-font text-xl font-black tracking-wider text-white">RC <span class="text-red-500 neon-text-red">ESPORTS</span></h1>
+                    <p class="text-xs tracking-widest text-gray-400 uppercase font-semibold">Management Core</p>
+                </div>
             </div>
-            <div>
-                <span class="heading-cyber text-lg font-black text-white tracking-wider">RC <span class="text-cyber-neon">ESPORTS</span></span>
-                <p class="text-[10px] text-cyber-textMuted tracking-widest uppercase">Management Portal</p>
-            </div>
-        </div>
-
-        <div class="flex items-center space-x-4">
-            <button id="global-back-nav" onclick="goBackToMain()" class="hidden text-xs font-bold text-slate-400 hover:text-white transition px-3 py-1.5 rounded-lg bg-cyber-card border border-cyber-border">
-                <i class="fa-solid fa-arrow-left-long mr-2"></i>Back to Portal
-            </button>
-
-            <button id="secret-gateway-trigger" onclick="openStaffGateway()" class="opacity-20 hover:opacity-100 text-[11px] text-slate-600 transition px-2 py-1 rounded bg-transparent border-none">
-                <i class="fa-solid fa-terminal"></i>
-            </button>
             
-            <div id="nav-profile" class="hidden flex items-center space-x-3 border-l border-cyber-border pl-4">
-                <div class="text-right hidden sm:block">
-                    <p id="user-display-name" class="text-xs font-semibold text-white">Console Node</p>
-                    <p id="user-display-role" class="text-[10px] text-cyber-neon uppercase tracking-wider font-bold">Guest</p>
-                </div>
-                <button onclick="logout()" class="text-slate-400 hover:text-rose-500 transition p-2 rounded-lg hover:bg-rose-500/10" title="Disconnect Session">
-                    <i class="fa-solid fa-power-off text-base"></i>
+            <div class="flex items-center space-x-3">
+                <button id="navDashboardBtn" onclick="switchTab('dashboard')" class="hidden bg-gray-900 border border-gray-700 hover:border-red-500 text-gray-300 hover:text-white px-3 py-1.5 rounded-md font-bold transition text-sm flex items-center space-x-2">
+                    <i class="fa-solid fa-gauge-high text-red-500"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button id="logoutBtn" onclick="handleLogout()" class="hidden bg-red-600 hover:bg-red-700 text-white font-bold px-3 py-1.5 rounded-md transition text-xs uppercase tracking-wider">
+                    <i class="fa-solid fa-right-from-bracket mr-1"></i> Logout
                 </button>
             </div>
         </div>
-    </nav>
+    </header>
 
-    <!-- MAIN FRAME ROUTER CONTENT -->
-    <main class="max-w-7xl mx-auto px-4 lg:px-8 py-8 min-h-[calc(100vh-70px)] flex flex-col justify-center">
+    <!-- MAIN CONTENT CONTAINERS -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 flex flex-col justify-center items-center">
+        
+        <!-- LOADING INDICATOR -->
+        <div id="loadingOverlay" class="fixed inset-0 bg-gray-950 bg-opacity-80 z-50 flex flex-col items-center justify-center hidden">
+            <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-red-500 mb-4"></div>
+            <p class="heading-font text-lg text-red-400 tracking-widest uppercase">Connecting to Database...</p>
+        </div>
 
-        <!-- ==================== VIEW 1: GLOBAL EMAIL ENTRY ==================== -->
-        <div id="view-auth" class="max-w-md w-full mx-auto space-y-6 py-8">
-            <div class="text-center space-y-3">
-                <div class="relative w-24 h-24 mx-auto bg-cyber-surface border-2 border-cyber-border rounded-2xl overflow-hidden shadow-2xl flex items-center justify-center group">
-                    <img src="https://cdn.dribbble.com/userupload/46144465/file/a015005a12c275761a70a5290859345d.png?format=webp&resize=400x300&vertical=center" alt="RC Gaming Shield" class="object-cover w-full h-full scale-125">
-                    <div class="absolute inset-0 bg-black/40 group-hover:bg-transparent transition-colors duration-300"></div>
+        <!-- TAB 1: LANDING WEB HUB -->
+        <section id="tab-landing" class="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6 my-auto">
+            <!-- Recruitment Node -->
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 flex flex-col justify-between hover:border-red-600 transition duration-300 group transform hover:-translate-y-1 shadow-2xl">
+                <div>
+                    <div class="text-red-500 text-4xl mb-4 group-hover:scale-110 transition duration-300">
+                        <i class="fa-solid fa-id-card"></i>
+                    </div>
+                    <h2 class="heading-font text-2xl font-bold tracking-wide text-white mb-2">RECRUITMENT DESK</h2>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-4">
+                        Think you have what it takes to manage competitive lobbies and maintain official tournament standard procedures? Submit your staffing application directly to the executive tier here.
+                    </p>
                 </div>
-                <h1 class="heading-cyber text-2xl font-black text-white uppercase tracking-wider">Identity Check</h1>
-                <p class="text-xs text-cyber-textMuted max-w-xs mx-auto">Provide your valid Gmail address to access your application workspace or create a profile record index.</p>
+                <button onclick="switchTab('recruitment')" class="w-full bg-red-600 hover:bg-red-700 text-white heading-font font-bold tracking-wider py-3 rounded-lg shadow-lg uppercase transition">
+                    Apply For Staff <i class="fa-solid fa-arrow-right ml-2"></i>
+                </button>
             </div>
 
-            <div class="bg-cyber-surface border border-cyber-border rounded-2xl p-6 md:p-8 shadow-2xl">
-                <form onsubmit="handleAuthSubmit(event)" class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-medium text-cyber-textMuted uppercase mb-1.5">Registered Gmail Address</label>
-                        <div class="relative">
-                            <i class="fa-solid fa-envelope absolute left-4 top-3.5 text-slate-500 text-sm"></i>
-                            <input type="email" required id="auth-email" class="w-full bg-cyber-card border border-cyber-border rounded-xl pl-10 pr-4 py-3 text-sm text-white focus:outline-none focus:border-cyber-neon transition" placeholder="username@gmail.com">
-                        </div>
+            <!-- Operator Portal Node -->
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 flex flex-col justify-between hover:border-blue-500 transition duration-300 group transform hover:-translate-y-1 shadow-2xl">
+                <div>
+                    <div class="text-blue-500 text-4xl mb-4 group-hover:scale-110 transition duration-300">
+                        <i class="fa-solid fa-user-shield"></i>
                     </div>
-                    <button type="submit" class="w-full bg-cyber-neon hover:bg-cyber-neonHover text-black font-bold uppercase tracking-wider text-xs py-3.5 rounded-xl transition-all duration-200 shadow-lg shadow-cyber-neon/10">
-                        Initialize Connection Layer
+                    <h2 class="heading-font text-2xl font-bold tracking-wide text-white mb-2">OPERATOR CONTROL</h2>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-4">
+                        Secure administrative login portal reserved strictly for verified RC Esports managers, executives, and active match administrators to process records.
+                    </p>
+                </div>
+                <button onclick="switchTab('login')" class="w-full bg-blue-600 hover:bg-blue-700 text-white heading-font font-bold tracking-wider py-3 rounded-lg shadow-lg uppercase transition">
+                    Access System <i class="fa-solid fa-lock ml-2"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- TAB 2: RECRUITMENT APPLICATION FORM -->
+        <section id="tab-recruitment" class="w-full max-w-2xl bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-2xl hidden">
+            <div class="flex items-center space-x-3 mb-6 border-b border-gray-800 pb-4">
+                <button onclick="switchTab('landing')" class="text-gray-400 hover:text-white transition text-lg"><i class="fa-solid fa-chevron-left"></i></button>
+                <h2 class="heading-font text-2xl font-bold tracking-wide text-white">STAFF APPLICATION NODE</h2>
+            </div>
+
+            <form id="appForm" onsubmit="submitApplication(event)" class="space-y-4 text-sm">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-gray-400 font-bold mb-1 uppercase tracking-wider text-xs">BGMI Character ID *</label>
+                        <input type="text" id="bgmi_id" required class="w-full bg-gray-950 border border-gray-800 rounded px-3 py-2 text-white focus:outline-none focus:border-red-500" placeholder="e.g. 5123456789">
+                    </div>
+                    <div>
+                        <label class="block text-gray-400 font-bold mb-1 uppercase tracking-wider text-xs">In-Game Name (IGN) *</label>
+                        <input type="text" id="in_game_name" required class="w-full bg-gray-950 border border-gray-800 rounded px-3 py-2 text-white focus:outline-none focus:border-red-500" placeholder="e.g. RCxOWNER">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-gray-400 font-bold mb-1 uppercase tracking-wider text-xs">Discord Username *</label>
+                        <input type="text" id="discord_username" required class="w-full bg-gray-950 border border-gray-800 rounded px-3 py-2 text-white focus:outline-none focus:border-red-500" placeholder="username#0000 or username">
+                    </div>
+                    <div>
+                        <label class="block text-gray-400 font-bold mb-1 uppercase tracking-wider text-xs">WhatsApp Contact Number *</label>
+                        <input type="tel" id="whatsapp_number" required class="w-full bg-gray-950 border border-gray-800 rounded px-3 py-2 text-white focus:outline-none focus:border-red-500" placeholder="10-digit number">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-gray-400 font-bold mb-1 uppercase tracking-wider text-xs">Age *</label>
+                        <input type="number" id="age" required min="12" max="60" class="w-full bg-gray-950 border border-gray-800 rounded px-3 py-2 text-white focus:outline-none focus:border-red-500" placeholder="Your age">
+                    </div>
+                    <div>
+                        <label class="block text-gray-400 font-bold mb-1 uppercase tracking-wider text-xs">Primary Device Configuration *</label>
+                        <input type="text" id="device" required class="w-full bg-gray-950 border border-gray-800 rounded px-3 py-2 text-white focus:outline-none focus:border-red-500" placeholder="e.g. iPhone 14 Pro, iQOO Neo 7">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-gray-400 font-bold mb-1 uppercase tracking-wider text-xs">Target Role Assignment *</label>
+                    <select id="role_applied" required class="w-full bg-gray-950 border border-gray-800 rounded px-3 py-2 text-white focus:outline-none focus:border-red-500">
+                        <option value="" disabled selected>Select a designated role...</option>
+                        <option value="T3 Lobby Host / Spectator">T3 Lobby Host / Spectator</option>
+                        <option value="T2 Lobby Manager">T2 Lobby Manager</option>
+                        <option value="Scrims Moderator">Scrims Moderator</option>
+                        <option value="Esports Operations Administrator">Esports Operations Administrator</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-gray-400 font-bold mb-1 uppercase tracking-wider text-xs">Past Management Experience Description *</label>
+                    <textarea id="past_experience" required rows="3" class="w-full bg-gray-950 border border-gray-800 rounded px-3 py-2 text-white focus:outline-none focus:border-red-500 custom-scrollbar" placeholder="List any networks, orgs, or groups you hosted matches or managed workflows for previously..."></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-gray-400 font-bold mb-1 uppercase tracking-wider text-xs">Why do you want to secure a slot inside RC Esports? *</label>
+                    <textarea id="why_join" required rows="3" class="w-full bg-gray-950 border border-gray-800 rounded px-3 py-2 text-white focus:outline-none focus:border-red-500 custom-scrollbar" placeholder="Explain your motivation, reliability patterns, and dedication metrics..."></textarea>
+                </div>
+
+                <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white heading-font font-bold tracking-wider py-3 rounded uppercase transition shadow-lg mt-2">
+                    Transmit Application Protocol <i class="fa-solid fa-paper-plane ml-2"></i>
+                </button>
+            </form>
+        </section>
+
+        <!-- TAB 3: OPERATOR ADMIN LOGIN -->
+        <section id="tab-login" class="w-full max-w-md bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-2xl hidden">
+            <div class="flex items-center space-x-3 mb-6 border-b border-gray-800 pb-4">
+                <button onclick="switchTab('landing')" class="text-gray-400 hover:text-white transition text-lg"><i class="fa-solid fa-chevron-left"></i></button>
+                <h2 class="heading-font text-2xl font-bold tracking-wide text-white">SECURE CORE LOGIN</h2>
+            </div>
+
+            <form onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-gray-400 font-semibold mb-1 text-xs uppercase tracking-wider">Access Token / Password</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-2.5 text-gray-500"><i class="fa-solid fa-key"></i></span>
+                        <input type="password" id="adminPassword" required class="w-full bg-gray-950 border border-gray-800 rounded pl-9 pr-3 py-2 text-white focus:outline-none focus:border-blue-500 tracking-widest" placeholder="••••••••••••">
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white heading-font font-bold tracking-wider py-2.5 rounded uppercase transition shadow-lg">
+                    Verify Clearance <i class="fa-solid fa-shield-halved ml-2"></i>
+                </button>
+            </form>
+        </section>
+
+        <!-- TAB 4: CENTRAL MANAGEMENT DASHBOARD (SECURE) -->
+        <section id="tab-dashboard" class="w-full bg-gray-900 border border-gray-800 rounded-xl p-4 sm:p-6 shadow-2xl hidden flex-col h-[80vh]">
+            <!-- Dashboard Menu Header -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gray-800 pb-4 mb-4 gap-4">
+                <div>
+                    <h2 class="heading-font text-2xl font-black text-white tracking-wide">EXECUTIVE COMMAND NODE</h2>
+                    <p class="text-xs text-gray-400 tracking-wider uppercase mt-0.5">Live Database Pipeline Synchronized</p>
+                </div>
+                <!-- Control Suite Buttons -->
+                <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+                    <button onclick="openRulebookModal()" class="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 px-3 py-2 rounded font-bold transition text-xs uppercase tracking-wider flex items-center space-x-1.5 flex-1 sm:flex-none justify-center">
+                        <i class="fa-solid fa-book text-yellow-500"></i> <span>Staff Rule Book</span>
                     </button>
-                </form>
-            </div>
-        </div>
-
-        <!-- ==================== VIEW 2: RECRUITMENT SELECTION ==================== -->
-        <div id="view-portal" class="hidden space-y-10">
-            <div class="text-center max-w-2xl mx-auto space-y-4 py-4">
-                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-cyber-neon/10 text-cyber-neon border border-cyber-neon/30 tracking-wide uppercase">Profile Active</span>
-                <h1 class="heading-cyber text-3xl md:text-5xl font-black text-white">RECRUITMENT SELECTION</h1>
-                <p class="text-cyber-textMuted text-sm md:text-base">Select a professional track sector below to launch an assignment form request.</p>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div onclick="selectPosition('Host')" id="card-Host" class="position-card bg-cyber-surface border-2 border-cyber-border hover:border-cyber-neon/50 p-5 rounded-2xl cursor-pointer transition-all duration-300 flex flex-col justify-between group">
-                    <div>
-                        <div class="w-12 h-12 rounded-xl bg-cyber-card flex items-center justify-center text-cyber-neon mb-4 group-hover:bg-cyber-neon group-hover:text-black transition-colors">
-                            <i class="fa-solid fa-microphone text-xl"></i>
-                        </div>
-                        <h3 class="text-lg font-bold text-white mb-1">Tournament Host</h3>
-                        <p class="text-xs text-cyber-textMuted leading-relaxed">Manage live tournament lobbies, coordinate match timings, and handle point distribution pipelines gracefully.</p>
-                    </div>
-                    <span class="text-xs font-semibold text-cyber-neon mt-4 inline-flex items-center">Open Form <i class="fa-solid fa-arrow-right ml-1.5 transition-transform group-hover:translate-x-1"></i></span>
-                </div>
-
-                <div onclick="selectPosition('VC Moderator')" id="card-VC-Moderator" class="position-card bg-cyber-surface border-2 border-cyber-border hover:border-cyber-neon/50 p-5 rounded-2xl cursor-pointer transition-all duration-300 flex flex-col justify-between group">
-                    <div>
-                        <div class="w-12 h-12 rounded-xl bg-cyber-card flex items-center justify-center text-cyber-neon mb-4 group-hover:bg-cyber-neon group-hover:text-black transition-colors">
-                            <i class="fa-solid fa-headset text-xl"></i>
-                        </div>
-                        <h3 class="text-lg font-bold text-white mb-1">VC Moderator</h3>
-                        <p class="text-xs text-cyber-textMuted leading-relaxed">Maintain decorum in official voice channels, coordinate team queries, and execute strict routing protocols.</p>
-                    </div>
-                    <span class="text-xs font-semibold text-cyber-neon mt-4 inline-flex items-center">Open Form <i class="fa-solid fa-arrow-right ml-1.5 transition-transform group-hover:translate-x-1"></i></span>
-                </div>
-
-                <div onclick="selectPosition('Chat Moderator')" id="card-Chat-Moderator" class="position-card bg-cyber-surface border-2 border-cyber-border hover:border-cyber-neon/50 p-5 rounded-2xl cursor-pointer transition-all duration-300 flex flex-col justify-between group">
-                    <div>
-                        <div class="w-12 h-12 rounded-xl bg-cyber-card flex items-center justify-center text-cyber-neon mb-4 group-hover:bg-cyber-neon group-hover:text-black transition-colors">
-                            <i class="fa-solid fa-comments text-xl"></i>
-                        </div>
-                        <h3 class="text-lg font-bold text-white mb-1">Chat Moderator</h3>
-                        <p class="text-xs text-cyber-textMuted leading-relaxed">Filter toxicity, enforce text rules across Discord & YouTube chats, and keep community interaction high.</p>
-                    </div>
-                    <span class="text-xs font-semibold text-cyber-neon mt-4 inline-flex items-center">Open Form <i class="fa-solid fa-arrow-right ml-1.5 transition-transform group-hover:translate-x-1"></i></span>
-                </div>
-
-                <div onclick="selectPosition('PT Maker')" id="card-PT-Maker" class="position-card bg-cyber-surface border-2 border-cyber-border hover:border-cyber-neon/50 p-5 rounded-2xl cursor-pointer transition-all duration-300 flex flex-col justify-between group">
-                    <div>
-                        <div class="w-12 h-12 rounded-xl bg-cyber-card flex items-center justify-center text-cyber-neon mb-4 group-hover:bg-cyber-neon group-hover:text-black transition-colors">
-                            <i class="fa-solid fa-table-list text-xl"></i>
-                        </div>
-                        <h3 class="text-lg font-bold text-white mb-1">Points Table Maker</h3>
-                        <p class="text-xs text-cyber-textMuted leading-relaxed">Calculate match stats, generate points tables accurately, and supply clean graphics under tight deadlines.</p>
-                    </div>
-                    <span class="text-xs font-semibold text-cyber-neon mt-4 inline-flex items-center">Open Form <i class="fa-solid fa-arrow-right ml-1.5 transition-transform group-hover:translate-x-1"></i></span>
-                </div>
-            </div>
-
-            <!-- Application Form Container -->
-            <div id="form-container" class="hidden max-w-2xl mx-auto bg-cyber-surface border border-cyber-border rounded-2xl p-6 md:p-8 shadow-2xl relative">
-                <div class="absolute top-4 right-4 bg-cyber-card px-3 py-1 rounded-md text-xs font-semibold border border-cyber-border text-cyber-neon" id="selected-role-badge">
-                    Selected Role
-                </div>
-                <h2 class="heading-cyber text-xl font-bold text-white mb-6 flex items-center"><i class="fa-solid fa-file-signature text-cyber-neon mr-3"></i>Application Form</h2>
-
-                <form id="recruitment-form" onsubmit="handleFormSubmit(event)" class="space-y-5">
-                    <input type="hidden" id="form-position" name="position">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-medium text-cyber-textMuted uppercase mb-1.5">Full Name <span class="text-rose-500">*</span></label>
-                            <input type="text" required id="form-name" class="w-full bg-cyber-card border border-cyber-border rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyber-neon transition" placeholder="e.g. Rahul Sharma">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-cyber-textMuted uppercase mb-1.5">Discord Display Name <span class="text-rose-500">*</span></label>
-                            <input type="text" required id="form-discord-name" class="w-full bg-cyber-card border border-cyber-border rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyber-neon transition" placeholder="e.g. RC_Alpha">
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-medium text-cyber-textMuted uppercase mb-1.5">Discord Unique Username <span class="text-rose-500">*</span></label>
-                            <input type="text" required id="form-discord-username" class="w-full bg-cyber-card border border-cyber-border rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyber-neon transition" placeholder="e.g. alpha_host">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-cyber-textMuted uppercase mb-1.5">WhatsApp Number <span class="text-rose-500">* (COMPULSORY)</span></label>
-                            <input type="tel" required id="form-whatsapp" class="w-full bg-cyber-card border border-cyber-border rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyber-neon transition" placeholder="e.g. +91 99887 76655">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-cyber-textMuted uppercase mb-1.5">Instagram ID <span class="text-slate-500">(IF AVAILABLE)</span></label>
-                        <input type="text" id="form-instagram" class="w-full bg-cyber-card border border-cyber-border rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyber-neon transition" placeholder="e.g. sharma_rahul">
-                    </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-xs font-medium text-cyber-textMuted uppercase mb-1.5">Age <span class="text-rose-500">*</span></label>
-                            <input type="number" required min="13" max="50" id="form-age" class="w-full bg-cyber-card border border-cyber-border rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyber-neon transition" placeholder="Min 13">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-cyber-textMuted uppercase mb-1.5">Experience (Months) <span class="text-rose-500">*</span></label>
-                            <input type="number" required min="0" id="form-experience" class="w-full bg-cyber-card border border-cyber-border rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyber-neon transition" placeholder="0 if fresher">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-cyber-textMuted uppercase mb-1.5">Daily Active Time <span class="text-rose-500">* (MIN 2 HRS)</span></label>
-                            <input type="number" required min="2" max="24" id="form-active-time" class="w-full bg-cyber-card border border-cyber-border rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyber-neon transition" placeholder="Min 2">
-                        </div>
-                    </div>
-                    
-                    <div id="pt-calculation-tool-box" class="hidden">
-                        <label class="block text-xs font-medium text-cyber-textMuted uppercase mb-1.5">Which Calculation Tool Do You Utilize? <span class="text-rose-500">*</span></label>
-                        <select id="form-calc-tool" class="w-full bg-cyber-card border border-cyber-border rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyber-neon transition">
-                            <option value="None / Unassigned Profile" selected disabled>Select option...</option>
-                            <option value="Google Sheets (Automated Array Formulas)">Google Sheets (Automated Array Formulas)</option>
-                            <option value="Microsoft Excel (Macros & Pivot Structures)">Microsoft Excel (Macros & Pivot Structures)</option>
-                            <option value="Custom Graphic Scripting Packages">Custom Graphic Scripting Packages</option>
-                            <option value="None / Other Tools Portfolio">None / Other Tools Portfolio</option>
-                        </select>
-                    </div>
-
-                    <div id="dynamic-field"></div>
-                    <div class="bg-cyber-card border border-cyber-border p-5 rounded-xl space-y-4">
-                        <div>
-                            <label class="block text-xs font-bold text-white uppercase tracking-wider mb-1">What do you expect from us in return? <span class="text-rose-500">*</span></label>
-                            <p class="text-[10px] text-amber-500/95 font-medium uppercase"><span class="font-bold">Disclaimer:</span> These perks are not guaranteed. These are only to know your needs and wants to make our management better.</p>
-                        </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                            <label class="flex items-center space-x-3 bg-cyber-surface border border-cyber-border p-3 rounded-lg cursor-pointer hover:border-cyber-neon/40 transition">
-                                <input type="radio" name="expectation" value="IN REAL PRIZES [related to esports]" required class="accent-cyber-neon h-4 w-4">
-                                <span class="text-xs font-medium text-slate-300">A) IN REAL PRIZES [Esports]</span>
-                            </label>
-                            <label class="flex items-center space-x-3 bg-cyber-surface border border-cyber-border p-3 rounded-lg cursor-pointer hover:border-cyber-neon/40 transition">
-                                <input type="radio" name="expectation" value="NITRO ID'S" class="accent-cyber-neon h-4 w-4">
-                                <span class="text-xs font-medium text-slate-300">B) NITRO ID'S</span>
-                            </label>
-                            <label class="flex items-center space-x-3 bg-cyber-surface border border-cyber-border p-3 rounded-lg cursor-pointer hover:border-cyber-neon/40 transition">
-                                <input type="radio" name="expectation" value="REAL CASH" class="accent-cyber-neon h-4 w-4">
-                                <span class="text-xs font-medium text-slate-300">C) REAL CASH</span>
-                            </label>
-                            <label class="flex items-center space-x-3 bg-cyber-surface border border-cyber-border p-3 rounded-lg cursor-pointer hover:border-cyber-neon/40 transition">
-                                <input type="radio" name="expectation" value="WORK EXPERIENCE" class="accent-cyber-neon h-4 w-4">
-                                <span class="text-xs font-medium text-slate-300">D) WORK EXPERIENCE</span>
-                            </label>
-                        </div>
-                    </div>
-                    <button type="submit" class="w-full bg-cyber-neon hover:bg-cyber-neonHover text-black font-bold uppercase tracking-wider text-xs py-3.5 rounded-xl transition-all duration-200 flex items-center justify-center shadow-lg">
-                        Submit Application Data File
+                    <button onclick="fetchApplications()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded font-bold transition text-xs uppercase tracking-wider flex items-center space-x-1.5 flex-1 sm:flex-none justify-center">
+                        <i class="fa-solid fa-rotate mr-0.5"></i> <span>Refresh Cloud</span>
                     </button>
-                </form>
-            </div>
-        </div>
-
-        <!-- ==================== VIEW 3: APPLICATION PENDING ==================== -->
-        <div id="view-pending" class="hidden max-w-xl w-full mx-auto text-center space-y-6 py-12">
-            <div class="relative inline-block">
-                <div class="w-20 h-20 bg-amber-500/10 border-2 border-amber-500/30 rounded-full flex items-center justify-center text-amber-500 animate-pulse mx-auto">
-                    <i class="fa-solid fa-circle-notch text-4xl animate-spin"></i>
-                </div>
-            </div>
-            <div class="space-y-2">
-                <h2 class="heading-cyber text-2xl font-black text-white">APPLICATION IN PROGRESS</h2>
-                <p id="pending-meta-text" class="text-xs text-cyber-textMuted">Account Core Pipeline: user@gmail.com</p>
-            </div>
-            <div class="bg-cyber-surface border border-cyber-border rounded-2xl p-6 text-left text-xs space-y-3 relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
-                <p class="text-slate-300 font-medium flex items-center"><i class="fa-solid fa-hourglass-half text-amber-500 mr-2 text-sm"></i> Review Phase Pending</p>
-                <p class="text-cyber-textMuted leading-relaxed">Your professional track portfolio is securely locked into our internal review queue database. Head Admins examine performance metrics sequentially.</p>
-            </div>
-        </div>
-
-        <!-- ==================== VIEW 4: VERIFIED EMPLOYEE ACTIVE WORKSPACE ==================== -->
-        <div id="view-approved" class="hidden max-w-4xl w-full mx-auto space-y-6 py-4">
-            <div class="bg-gradient-to-b from-cyber-surface to-[#0e1017] border border-cyber-border rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-2xl space-y-6">
-                <div class="absolute -top-24 -right-24 w-48 h-48 bg-cyber-neon/10 rounded-full blur-3xl pointer-events-none"></div>
-                
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-cyber-border/60 pb-6">
-                    <div class="flex items-center space-x-4">
-                        <div class="w-16 h-16 bg-cyber-neon/10 border-2 border-cyber-neon/40 rounded-2xl flex items-center justify-center text-cyber-neon shadow-lg shadow-cyber-neon/5 relative">
-                            <i class="fa-solid fa-user-gear text-2xl"></i>
-                            <div class="absolute -bottom-1.5 -right-1.5 bg-cyber-bg text-cyber-neon p-0.5 rounded-full">
-                                <i class="fa-solid fa-circle-check text-base"></i>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="flex items-center space-x-2">
-                                <h2 id="employee-profile-name" class="heading-cyber text-xl font-bold text-white tracking-wide">Employee Nickname</h2>
-                                <span class="bg-cyber-neon/10 text-cyber-neon border border-cyber-neon/30 text-[9px] uppercase px-1.5 py-0.2 rounded font-black tracking-widest flex items-center"><i class="fa-solid fa-certificate mr-1"></i>Verified Staff</span>
-                            </div>
-                            <p id="employee-profile-email" class="text-xs text-cyber-textMuted font-mono">assigned_identity@gmail.com</p>
-                        </div>
-                    </div>
-
-                    <div class="text-left sm:text-right">
-                        <span id="employee-profile-position" class="inline-block bg-cyber-card border border-cyber-border px-3 py-1 rounded-xl text-xs font-mono font-bold text-cyber-neon tracking-wide uppercase">Track Asset</span>
-                        <p id="employee-strike-count" class="text-[10px] text-amber-500 font-semibold uppercase mt-1.5"><i class="fa-solid fa-triangle-exclamation mr-1"></i>0 Infrac Records</p>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-cyber-card/60 p-4 rounded-xl border border-cyber-border/50 text-xs">
-                    <div class="space-y-3 border-b sm:border-b-0 sm:border-r border-cyber-border/40 pb-3 sm:pb-0 sm:pr-4">
-                        <span class="text-white font-bold uppercase tracking-wider text-[10px] block text-cyber-neon"><i class="fa-solid fa-signal mr-1"></i> Duty Availability State</span>
-                        <p class="text-cyber-textMuted text-[11px]">Toggle your active operational footprint status state for management overview.</p>
-                        
-                        <div class="flex items-center space-x-3 pt-1">
-                            <button id="duty-active-btn" onclick="toggleStaffDuty(true)" class="px-4 py-2 rounded-xl border font-bold uppercase tracking-wider text-[10px] transition-all">Active</button>
-                            <button id="duty-inactive-btn" onclick="toggleStaffDuty(false)" class="px-4 py-2 rounded-xl border font-bold uppercase tracking-wider text-[10px] transition-all">Inactive</button>
-                        </div>
-                    </div>
-
-                    <div class="space-y-2 sm:pl-4">
-                        <span class="text-white font-bold uppercase tracking-wider text-[10px] block text-amber-400"><i class="fa-solid fa-plane-departure mr-1"></i> Schedule Leave Period</span>
-                        <div class="grid grid-cols-2 gap-2 text-[11px]">
-                            <div>
-                                <label class="block text-cyber-textMuted uppercase text-[9px] mb-1">From Date</label>
-                                <input type="date" id="leave-from" onchange="submitLeaveRequest()" class="w-full bg-cyber-surface border border-cyber-border rounded-lg px-2 py-1.5 text-white focus:outline-none focus:border-cyber-neon">
-                            </div>
-                            <div>
-                                <label class="block text-cyber-textMuted uppercase text-[9px] mb-1">To Date</label>
-                                <input type="date" id="leave-to" onchange="submitLeaveRequest()" class="w-full bg-cyber-surface border border-cyber-border rounded-lg px-2 py-1.5 text-white focus:outline-none focus:border-cyber-neon">
-                            </div>
-                        </div>
-                        <button id="clear-leave-btn" onclick="clearLeaveRequest()" class="hidden text-[10px] text-rose-400 hover:underline uppercase font-bold pt-1"><i class="fa-solid fa-trash-can mr-1"></i> Cancel Scheduled Leave</button>
-                    </div>
-                </div>
-
-                <!-- Command Links -->
-                <div class="p-5 bg-cyber-card border border-cyber-neon/20 rounded-2xl space-y-4">
-                    <h3 class="heading-cyber text-xs font-bold text-white uppercase tracking-widest flex items-center text-cyber-neon">
-                        <i class="fa-solid fa-link mr-2"></i> Management Command Links
-                    </h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <a href="https://chat.whatsapp.com/KqRIaEnNdd28BycpSpX3wN?s=cl&p=a&mlu=2&amv=0" target="_blank" class="flex items-center justify-between p-3.5 bg-cyber-surface border border-cyber-border hover:border-cyber-neon rounded-xl transition group">
-                            <span class="text-xs font-medium text-slate-200 group-hover:text-white"><i class="fa-solid fa-calendar-check text-emerald-400 mr-2"></i> Daily Scheduling Operations</span>
-                            <i class="fa-solid fa-up-right-from-square text-xs text-cyber-textMuted group-hover:text-cyber-neon"></i>
-                        </a>
-                        <a href="https://chat.whatsapp.com/DqZ9XcWhhFACoEFs44HfHE?s=cl&p=a&mlu=2&amv=0" target="_blank" class="flex items-center justify-between p-3.5 bg-cyber-surface border border-cyber-border hover:border-cyber-neon rounded-xl transition group">
-                            <span class="text-xs font-medium text-slate-200 group-hover:text-white"><i class="fa-solid fa-camera text-sky-400 mr-2"></i> End Match Screen Controls</span>
-                            <i class="fa-solid fa-up-right-from-square text-xs text-cyber-textMuted group-hover:text-cyber-neon"></i>
-                        </a>
-                        <a href="https://chat.whatsapp.com/FZMHjAeKtmZ5JcmJp119NE?s=cl&p=a&mlu=2&amv=0" target="_blank" class="flex items-center justify-between p-3.5 bg-cyber-surface border border-cyber-border hover:border-cyber-neon rounded-xl transition group">
-                            <span class="text-xs font-medium text-slate-200 group-hover:text-white"><i class="fa-solid fa-gift text-purple-400 mr-2"></i> Operational Perk Slots Portal</span>
-                            <i class="fa-solid fa-up-right-from-square text-xs text-cyber-textMuted group-hover:text-cyber-neon"></i>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- ADDED SECTION: INTERACTIVE CLICKABLE PDF VIEW FRAME -->
-                <div class="p-6 bg-cyber-card border border-cyber-border rounded-2xl space-y-4">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-cyber-border pb-3 gap-2">
-                        <h3 class="heading-cyber text-xs font-bold text-white uppercase tracking-widest flex items-center text-rose-400">
-                            <i class="fa-solid fa-file-pdf mr-2 text-rose-500"></i> RC Esports Staff Rules Handbook
-                        </h3>
-                        <!-- VERBATIM REFERENCE LINK FILE TRIGGER -->
-                        <a href="RC_ESPORTS_STAFF_RULE_BOOK (1) (2).pdf" download class="inline-flex items-center text-[10px] font-bold uppercase tracking-wider bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 px-3 py-1.5 rounded-lg transition shadow-md">
-                            <i class="fa-solid fa-download mr-1.5"></i> Download Rule Book PDF
-                        </a>
-                    </div>
-
-                    <!-- Sandbox View Port Framework mapping device nodes -->
-                    <div class="w-full h-[550px] bg-cyber-bg border border-cyber-border rounded-xl overflow-hidden relative shadow-inner">
-                        <object data="RC_ESPORTS_STAFF_RULE_BOOK (1) (2).pdf" type="application/pdf" class="w-full h-full">
-                            <!-- Alternate inline canvas renderer layout layer if device drops sandbox tracking context -->
-                            <div class="w-full h-full flex flex-col items-center justify-center text-center p-6 space-y-4 bg-cyber-surface/60">
-                                <div class="w-14 h-14 bg-rose-500/10 rounded-xl flex items-center justify-center text-rose-400 border border-rose-500/20">
-                                    <i class="fa-solid fa-file-pdf text-2xl"></i>
-                                </div>
-                                <div class="space-y-1">
-                                    <p class="text-sm font-bold text-white">Rule Book Reference Sandbox Node</p>
-                                    <p class="text-xs text-cyber-textMuted max-w-sm mx-auto">Your current file preview sandbox context is running. Click the link above to trace, read or download the book directly.</p>
-                                </div>
-                                <a href="RC_ESPORTS_STAFF_RULE_BOOK (1) (2).pdf" target="_blank" class="px-4 py-2 bg-cyber-neon hover:bg-cyber-neonHover text-black text-[11px] font-bold uppercase tracking-wider rounded-xl transition shadow-lg">
-                                    <i class="fa-solid fa-arrow-up-right-from-square mr-1.5"></i> Launch PDF Viewer Mode
-                                </a>
-                            </div>
-                        </object>
-                    </div>
-
-                    <!-- Hardcoded rule overview block below to make sure rules display textually if files fail to load -->
-                    <div class="mt-4 bg-cyber-surface/40 p-4 rounded-xl border border-cyber-border/40 space-y-4 text-xs">
-                        <p class="text-[10px] uppercase font-bold text-cyber-neon tracking-wider"><i class="fa-solid fa-scroll mr-1"></i> Core Quota Review Matrix Summary:</p>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-slate-300">
-                            <div class="bg-cyber-card/60 p-3 rounded-lg border border-cyber-border/40">
-                                <p class="font-bold text-white border-b border-cyber-border/40 pb-1 mb-1.5 uppercase tracking-wider text-[9px] text-cyber-neon">1. VC Targets[span_0](start_span)[span_0](end_span)</p>
-                                <p class="leading-relaxed">Min 2 Hrs daily / 12 Hrs weekly inside official VCs tracked specifically between 1:00 PM and 10:00 PM.[span_1](start_span)[span_1](end_span)</p>
-                            </div>
-                            <div class="bg-cyber-card/60 p-3 rounded-lg border border-cyber-border/40">
-                                <p class="font-bold text-white border-b border-cyber-border/40 pb-1 mb-1.5 uppercase tracking-wider text-[9px] text-cyber-neon">2. Text Volume[span_2](start_span)[span_2](end_span)</p>
-                                <p class="leading-relaxed">Min 50+ quality updates daily / 500 per week. Bots and spam commands will not be processed.[span_3](start_span)[span_3](end_span)</p>
-                            </div>
-                            <div class="bg-cyber-card/60 p-3 rounded-lg border border-cyber-border/40">
-                                <p class="font-bold text-white border-b border-cyber-border/40 pb-1 mb-1.5 uppercase tracking-wider text-[9px] text-cyber-neon">3. Lobbies Count[span_4](start_span)[span_4](end_span)</p>
-                                <p class="leading-relaxed">Min 4 matches hosted weekly. Duty reacts required to schedule alerts before 2:30 PM flat daily.[span_5](start_span)[span_5](end_span)</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                    <div class="bg-cyber-card/40 border border-cyber-border/40 p-4 rounded-xl space-y-1.5">
-                        <span class="text-cyber-textMuted uppercase text-[10px] tracking-wider font-bold block">Assigned WA Core Node</span>
-                        <p id="employee-profile-wa" class="text-slate-200 font-mono text-sm">--</p>
-                    </div>
-                    <div class="bg-cyber-card/40 border border-cyber-border/40 p-4 rounded-xl space-y-1.5">
-                        <span class="text-cyber-textMuted uppercase text-[10px] tracking-wider font-bold block">Calculation Allocation</span>
-                        <p id="employee-profile-tool" class="text-slate-200 text-sm">--</p>
-                    </div>
-                    <div class="bg-cyber-card/40 border border-cyber-border/40 p-4 rounded-xl sm:col-span-2 space-y-1.5">
-                        <span class="text-cyber-textMuted uppercase text-[10px] tracking-wider font-bold block">Preferred Operational Time Windows Block</span>
-                        <p id="employee-profile-time" class="text-slate-200 font-medium italic">--</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ==================== VIEW 5: STAFF TERMINAL LOGIN ==================== -->
-        <div id="view-login" class="hidden max-w-md w-full mx-auto py-6">
-            <div class="bg-cyber-surface border border-cyber-border rounded-2xl p-6 md:p-8 shadow-2xl space-y-6">
-                <div class="text-center space-y-2">
-                    <i class="fa-solid fa-user-shield text-cyber-neon text-3xl"></i>
-                    <h2 class="heading-cyber text-xl font-bold text-white">Staff Terminal</h2>
-                    <p class="text-xs text-cyber-textMuted">Restricted Command Shell Node Access</p>
-                </div>
-
-                <form onsubmit="handleLogin(event)" class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-medium text-cyber-textMuted uppercase mb-1.5">Clearance Profile</label>
-                        <select id="login-role" class="w-full bg-cyber-card border border-cyber-border rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyber-neon transition">
-                            <option value="" disabled selected>Choose profile clearance track...</option>
-                            <option value="Head Operator">Head Operator</option>
-                            <option value="Operator">Operator</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-cyber-textMuted uppercase mb-1.5">Authorization Password</label>
-                        <input type="password" id="login-password" required class="w-full bg-cyber-card border border-cyber-border rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyber-neon transition" placeholder="••••••••">
-                    </div>
-                    <div id="login-error" class="hidden text-xs text-rose-500 bg-rose-500/10 border border-rose-500/20 p-2.5 rounded-lg text-center">Invalid credentials.</div>
-                    <button type="submit" class="w-full bg-cyber-neon hover:bg-cyber-neonHover text-black font-bold uppercase tracking-wider text-xs py-3 rounded-xl transition">Verify Signatures</button>
-                </form>
-            </div>
-        </div>
-
-        <!-- ==================== VIEW 6: MANAGEMENT CONSOLE DASHBOARD ==================== -->
-        <div id="view-dashboard" class="hidden space-y-8 py-4">
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="bg-cyber-surface border border-cyber-border p-4 rounded-xl flex items-center justify-between">
-                    <div>
-                        <p class="text-xs text-cyber-textMuted font-medium uppercase">Pending Reviews</p>
-                        <h3 id="stat-pending" class="heading-cyber text-2xl font-bold text-white mt-1">0</h3>
-                    </div>
-                    <div class="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center"><i class="fa-solid fa-clock-rotate-left"></i></div>
-                </div>
-                <div class="bg-cyber-surface border border-cyber-border p-4 rounded-xl flex items-center justify-between">
-                    <div>
-                        <p class="text-xs text-cyber-textMuted font-medium uppercase">Approved Crew</p>
-                        <h3 id="stat-approved" class="heading-cyber text-2xl font-bold text-white mt-1">0</h3>
-                    </div>
-                    <div class="w-10 h-10 rounded-lg bg-cyber-neon/10 text-cyber-neon flex items-center justify-center"><i class="fa-solid fa-user-check"></i></div>
-                </div>
-                <div class="bg-cyber-surface border border-cyber-border p-4 rounded-xl flex items-center justify-between">
-                    <div>
-                        <p class="text-xs text-cyber-textMuted font-medium uppercase">Terminated / Rejected</p>
-                        <h3 id="stat-rejected" class="heading-cyber text-2xl font-bold text-white mt-1">0</h3>
-                    </div>
-                    <div class="w-10 h-10 rounded-lg bg-rose-500/10 text-rose-500 flex items-center justify-center"><i class="fa-solid fa-user-xmark"></i></div>
-                </div>
-                <div class="bg-cyber-surface border border-cyber-border p-4 rounded-xl flex items-center justify-between">
-                    <div>
-                        <p class="text-xs text-cyber-textMuted font-medium uppercase">Active Strikes</p>
-                        <h3 id="stat-warnings" class="heading-cyber text-2xl font-bold text-amber-500 mt-1">0</h3>
-                    </div>
-                    <div class="w-10 h-10 rounded-lg bg-orange-500/10 text-orange-500 flex items-center justify-center"><i class="fa-solid fa-triangle-exclamation"></i></div>
                 </div>
             </div>
 
-            <!-- Tabs Navigation -->
-            <div class="flex border-b border-cyber-border space-x-6">
-                <button onclick="switchDashTab('applicants')" id="tab-applicants-btn" class="border-b-2 border-cyber-neon text-white text-sm font-bold pb-3 flex items-center px-1">
-                    <i class="fa-solid fa-users-viewfinder mr-2 text-cyber-neon"></i> Recruitment Desk
-                </button>
-                <button onclick="switchDashTab('staff')" id="tab-staff-btn" class="border-b-2 border-transparent text-cyber-textMuted hover:text-white text-sm font-bold pb-3 flex items-center px-1 transition">
-                    <i class="fa-solid fa-id-card-clip mr-2"></i> Roster Workspace
-                </button>
-                <button onclick="switchDashTab('logs')" id="tab-logs-btn" class="border-b-2 border-transparent text-cyber-textMuted hover:text-white text-sm font-bold pb-3 flex items-center px-1 transition">
-                    <i class="fa-solid fa-clock-history mr-2"></i> Activity Log
-                </button>
-            </div>
-
-            <!-- TAB CONTAINER: RECRUITMENT DESK -->
-            <div id="dash-tab-applicants" class="space-y-4">
-                <div class="bg-cyber-surface p-4 border border-cyber-border rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-3">
-                    <div class="relative flex-1 max-w-md">
-                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-500 text-sm"></i>
-                        <input type="text" id="filter-search" oninput="renderApplicants()" class="w-full bg-cyber-card border border-cyber-border rounded-xl pl-10 pr-4 py-2 text-xs text-white focus:outline-none focus:border-cyber-neon transition" placeholder="Filter parameters...">
-                    </div>
-                    <div class="flex flex-wrap items-center gap-2">
-                        <select id="filter-role" onchange="renderApplicants()" class="bg-cyber-card border border-cyber-border rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                            <option value="All">All Positions</option>
-                            <option value="Host">Host</option>
-                            <option value="VC Moderator">VC Moderator</option>
-                            <option value="Chat Moderator">Chat Moderator</option>
-                            <option value="PT Maker">PT Maker</option>
-                        </select>
-                        <select id="filter-status" onchange="renderApplicants()" class="bg-cyber-card border border-cyber-border rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                            <option value="All">Statuses (Pending Only)</option>
-                            <option value="Pending">Pending Review</option>
-                            <option value="Rejected">Rejected Only</option>
-                        </select>
-                    </div>
+            <!-- Stats Analytics Frame -->
+            <div class="grid grid-cols-3 gap-2 sm:gap-4 mb-4 text-center">
+                <div class="bg-gray-950 p-2 sm:p-3 border border-gray-800 rounded">
+                    <p class="text-[10px] sm:text-xs text-gray-400 font-bold uppercase tracking-wider">Total Received</p>
+                    <p id="stat-total" class="heading-font text-xl sm:text-3xl font-black text-blue-500 mt-0.5">0</p>
                 </div>
-                <div id="applicants-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-            </div>
-
-            <!-- TAB CONTAINER: ROSTER MATRIX WORKSPACE -->
-            <div id="dash-tab-staff" class="hidden bg-cyber-surface border border-cyber-border rounded-xl overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs border-collapse">
-                        <thead>
-                            <tr class="bg-cyber-card text-cyber-textMuted uppercase tracking-wider border-b border-cyber-border">
-                                <th class="p-4">Personnel Identity Index</th>
-                                <th class="p-4">Role Assigned</th>
-                                <th class="p-4">Strike Infracs</th>
-                                <th class="p-4 text-right">Operational Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="staff-table-body" class="divide-y divide-cyber-border/40"></tbody>
-                    </table>
+                <div class="bg-gray-950 p-2 sm:p-3 border border-gray-800 rounded">
+                    <p class="text-[10px] sm:text-xs text-gray-400 font-bold uppercase tracking-wider">Pending Audit</p>
+                    <p id="stat-pending" class="heading-font text-xl sm:text-3xl font-black text-yellow-500 mt-0.5">0</p>
+                </div>
+                <div class="bg-gray-950 p-2 sm:p-3 border border-gray-800 rounded">
+                    <p class="text-[10px] sm:text-xs text-gray-400 font-bold uppercase tracking-wider">Approved Staff</p>
+                    <p id="stat-approved" class="heading-font text-xl sm:text-3xl font-black text-green-500 mt-0.5">0</p>
                 </div>
             </div>
 
-            <!-- TAB CONTAINER: AUDIT LOG STREAMS -->
-            <div id="dash-tab-logs" class="hidden bg-cyber-surface border border-cyber-border rounded-xl p-6 space-y-4">
-                <div class="flex items-center justify-between border-b border-cyber-border pb-3">
-                    <h3 class="heading-cyber text-sm font-bold text-white">Activity Logs Database</h3>
-                    <button id="flush-logs-btn" onclick="clearSystemLogs()" class="text-[10px] uppercase font-bold text-rose-400 hover:underline">Flush Logs</button>
+            <!-- Main Data Table Panel Container -->
+            <div class="flex-grow overflow-auto border border-gray-800 rounded bg-gray-950 custom-scrollbar">
+                <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                    <thead>
+                        <tr class="bg-gray-900 border-b border-gray-800 text-gray-400 uppercase tracking-wider heading-font sticky top-0 z-10 text-[11px]">
+                            <th class="p-3">Applicant (IGN / ID)</th>
+                            <th class="p-3 hidden md:table-cell">Target Assignment</th>
+                            <th class="p-3 hidden sm:table-cell">WhatsApp Contact</th>
+                            <th class="p-3">Verification Status</th>
+                            <th class="p-3 text-right">Actions Suite</th>
+                        </tr>
+                    </thead>
+                    <tbody id="applicationTableBody" class="divide-y divide-gray-900">
+                        <!-- Dynamic Records Rendered Intact From Database -->
+                    </tbody>
+                </table>
+                <div id="noDataPlaceholder" class="p-8 text-center text-gray-500 flex flex-col items-center justify-center space-y-2">
+                    <i class="fa-solid fa-folder-open text-3xl"></i>
+                    <p class="heading-font tracking-wide text-sm">No Operational Applications Loaded From Cloud</p>
                 </div>
-                <div id="logs-terminal-stream" class="space-y-2 max-h-[400px] overflow-y-auto font-mono text-[11px] text-slate-400"></div>
             </div>
-        </div>
+        </section>
     </main>
 
-    <!-- INFO POP-UP MODAL -->
-    <div id="info-modal" class="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 hidden">
-        <div class="bg-cyber-surface border border-cyber-border rounded-2xl max-w-lg w-full p-6 space-y-4 relative shadow-2xl">
-            <button onclick="closeInfoModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
-            <h3 class="heading-cyber text-sm font-bold text-cyber-neon uppercase tracking-widest border-b border-cyber-border pb-2"><i class="fa-solid fa-circle-info mr-2"></i>Full Personnel Dossier</h3>
-            <div id="modal-content-area" class="space-y-3 text-xs text-slate-300 overflow-y-auto max-h-[450px] pr-1"></div>
+    <!-- FOOTER PANEL -->
+    <footer class="bg-gray-950 border-t border-gray-900 py-3 text-center text-xs text-gray-500 font-semibold tracking-wider">
+        <p>&copy; 2026 RC ESPORTS OPERATIONS SUITE &bull; AUTHORIZED PERSONNEL CLEARANCE ONLY</p>
+    </footer>
+
+    <!-- LIGHTBOX MODAL: FULL RECORD DOSSIER VIEW -->
+    <div id="dossierModal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-gray-900 border-2 border-red-600 rounded-xl w-full max-w-lg p-5 shadow-[0_0_30px_rgba(239,68,68,0.3)] text-sm flex flex-col max-h-[90vh]">
+            <div class="flex justify-between items-center border-b border-gray-800 pb-3 mb-4">
+                <h3 class="heading-font text-lg font-black tracking-wide text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-folder-open text-red-500"></i>
+                    <span>CANDIDATE WORKFLOW DOSSIER</span>
+                </h3>
+                <button onclick="closeDossierModal()" class="text-gray-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="dossierContent" class="space-y-3 overflow-y-auto pr-1 custom-scrollbar text-gray-300 flex-grow">
+                <!-- Data Mapping Executed Automatically -->
+            </div>
         </div>
     </div>
 
-    <!-- TOAST UTILITY -->
-    <div id="toast" class="fixed bottom-5 right-5 z-50 bg-cyber-card border border-cyber-neon/30 text-white px-5 py-3.5 rounded-xl shadow-2xl flex items-center space-x-3 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
-        <i id="toast-icon" class="fa-solid fa-circle-check text-cyber-neon text-lg"></i>
-        <p id="toast-msg" class="text-xs font-medium"></p>
+    <!-- LIGHTBOX MODAL: RULES HANDBOOK VIEWER -->
+    <div id="rulebookModal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-gray-900 border-2 border-blue-500 rounded-xl w-full max-w-4xl h-[85vh] p-4 shadow-[0_0_30px_rgba(59,130,246,0.3)] flex flex-col">
+            <div class="flex justify-between items-center border-b border-gray-800 pb-3 mb-3">
+                <h3 class="heading-font text-md sm:text-lg font-black tracking-wide text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-shield-halved text-blue-500"></i>
+                    <span>RC ESPORTS STAFF RULES & LOBBY DIRECTIVE HANDBOOK</span>
+                </h3>
+                <button onclick="closeRulebookModal()" class="text-gray-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="flex-grow bg-gray-950 rounded border border-gray-800 overflow-hidden">
+                <iframe src="RC_ESPORTS_STAFF_RULE_BOOK (1) (2).pdf" class="w-full h-full" border="0"></iframe>
+            </div>
+        </div>
     </div>
 
-    <!-- PERSISTENT ROUTED MEMORY SYSTEM CONTROLLER -->
+    <!-- CORE FUNCTIONAL SYSTEM CONTROLLER SCRIPTS -->
     <script>
-        const DEFAULT_STATE = {
-            applicants: [],
-            warnings: {},
-            logs: [
-                { timestamp: '2026-06-20 12:00:00', message: 'Local clean database matrix initialized.', actor: 'SYSTEM' }
-            ]
-        };
+        // BACKEND KEY INITIALIZATION (SUPABASE DEPLOYMENT)
+        const SUPABASE_URL = "https://ippxcvcouyjohcxppllm.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlwcHhjdmNvdXlqb2hjeHBwbGxtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NDczMDAsImV4cCI6MjA5NzUyMzMwMH0.tWJIoV0ZflTFSX-qHlbvi-vIAzsS78hQ52rpyaX-14U";
+        
+        // Connect to Cloud Database Instance
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        let db = { applicants: [], warnings: {}, logs: [] };
-        let session = { authenticatedEmail: null, managementRole: null };
-        let runtime_selectedPosition = null;
+        // Security Configuration Token 
+        const PASSKEY_HASH = "RCMASTER2026"; 
+        let currentLoadedApplications = [];
 
-        window.addEventListener('DOMContentLoaded', () => {
-            loadDatabaseFromStorage();
-            routeCurrentSessionState();
-        });
-
-        function loadDatabaseFromStorage() {
-            const data = localStorage.getItem('RC_ESPORTS_DATABASE');
-            if (data) { 
-                db = JSON.parse(data); 
-            } else { 
-                db = JSON.parse(JSON.stringify(DEFAULT_STATE)); 
-                saveDatabaseToStorage(); 
-            }
-        }
-
-        function saveDatabaseToStorage() { 
-            localStorage.setItem('RC_ESPORTS_DATABASE', JSON.stringify(db)); 
-        }
-
-        function goBackToMain() {
-            session.authenticatedEmail = null; session.managementRole = null;
-            showToast("Returned safely to main node identity check.", "info"); routeCurrentSessionState();
-        }
-
-        function routeCurrentSessionState() {
-            document.getElementById('view-auth').classList.add('hidden');
-            document.getElementById('view-portal').classList.add('hidden');
-            document.getElementById('view-pending').classList.add('hidden');
-            document.getElementById('view-approved').classList.add('hidden');
-            document.getElementById('view-login').classList.add('hidden');
-            document.getElementById('view-dashboard').classList.add('hidden');
-
-            const profile = document.getElementById('nav-profile');
-            const dName = document.getElementById('user-display-name');
-            const dRole = document.getElementById('user-display-role');
-            const backNavBtn = document.getElementById('global-back-nav');
-
-            if (session.managementRole || session.authenticatedEmail) { backNavBtn.classList.remove('hidden'); } else { backNavBtn.classList.add('hidden'); }
-
-            if (session.managementRole) {
-                profile.classList.remove('hidden');
-                dName.innerText = session.managementRole === 'Head Operator' ? 'Head Operator' : 'Console Operator';
-                dRole.innerText = session.managementRole;
-                document.getElementById('view-dashboard').classList.remove('hidden');
-                const flushBtn = document.getElementById('flush-logs-btn');
-                if(session.managementRole === 'Operator') { flushBtn.classList.add('hidden'); } else { flushBtn.classList.remove('hidden'); }
-                updateStats(); renderApplicants(); renderStaffTable(); renderSystemLogs();
-                return;
-            }
-
-            if (session.authenticatedEmail) {
-                profile.classList.remove('hidden'); dName.innerText = session.authenticatedEmail.split('@')[0]; dRole.innerText = 'Applicant';
-                const record = db.applicants.find(a => a.email.toLowerCase() === session.authenticatedEmail.toLowerCase());
-                
-                if (!record) { 
-                    document.getElementById('view-portal').classList.remove('hidden'); 
-                } else if (record.status === 'Pending') {
-                    document.getElementById('pending-meta-text').innerText = `Account Core Node Vector: ${session.authenticatedEmail}`;
-                    document.getElementById('view-pending').classList.remove('hidden');
-                } else if (record.status === 'Approved') {
-                    document.getElementById('employee-profile-name').innerText = record.discordName;
-                    document.getElementById('employee-profile-email').innerText = record.email;
-                    document.getElementById('employee-profile-position').innerText = record.position;
-                    document.getElementById('employee-profile-wa').innerText = record.whatsapp;
-                    
-                    document.getElementById('employee-profile-tool').innerText = (record.position === 'PT Maker' && record.calcTool) ? record.calcTool : 'Not Required for Position';
-                    document.getElementById('employee-profile-time').innerText = record.extra;
-                    
-                    document.getElementById('leave-from').value = record.leaveFrom || '';
-                    document.getElementById('leave-to').value = record.leaveTo || '';
-                    if(record.leaveFrom && record.leaveTo) { document.getElementById('clear-leave-btn').classList.remove('hidden'); }
-                    
-                    const strikeCount = db.warnings[record.discordName] || 0;
-                    document.getElementById('employee-strike-count').innerText = `${strikeCount} / 3 Active Weekly Strike Infractions`;
-                    document.getElementById('view-approved').classList.remove('hidden');
-                    updateStaffWorkspaceButtons();
-                } else { 
-                    document.getElementById('view-portal').classList.remove('hidden'); 
-                }
-                return;
-            }
-
-            document.getElementById('view-auth').classList.remove('hidden');
-            profile.classList.add('hidden'); document.getElementById('secret-gateway-trigger').classList.remove('hidden');
-        }
-
-        function updateStaffWorkspaceButtons() {
-            const record = db.applicants.find(a => a.email.toLowerCase() === session.authenticatedEmail.toLowerCase());
-            if (!record) return;
-            const activeBtn = document.getElementById('duty-active-btn');
-            const inactiveBtn = document.getElementById('duty-inactive-btn');
-            if(record.isActive === undefined) record.isActive = true;
-            if (record.isActive) {
-                activeBtn.className = "px-4 py-2 rounded-xl font-bold uppercase tracking-wider text-[10px] bg-cyber-neon text-black border-cyber-neon shadow-lg shadow-cyber-neon/20";
-                inactiveBtn.className = "px-4 py-2 rounded-xl font-bold uppercase tracking-wider text-[10px] bg-cyber-surface text-slate-400 border-cyber-border hover:text-white";
-            } else {
-                activeBtn.className = "px-4 py-2 rounded-xl font-bold uppercase tracking-wider text-[10px] bg-cyber-surface text-slate-400 border-cyber-border hover:text-white";
-                inactiveBtn.className = "px-4 py-2 rounded-xl font-bold uppercase tracking-wider text-[10px] bg-rose-500/20 text-rose-400 border-rose-500/30 shadow-lg";
-            }
-        }
-
-        function toggleStaffDuty(status) {
-            const record = db.applicants.find(a => a.email.toLowerCase() === session.authenticatedEmail.toLowerCase());
-            if (record) {
-                record.isActive = status;
-                pushLog(`Staff member "${record.discordName}" changed operational duty state to ${status ? 'ACTIVE' : 'INACTIVE'}.`, 'STAFF');
-                saveDatabaseToStorage(); updateStaffWorkspaceButtons(); showToast(`Duty status shifted to ${status ? 'Active' : 'Inactive'}.`, "success");
-            }
-        }
-
-        function submitLeaveRequest() {
-            const record = db.applicants.find(a => a.email.toLowerCase() === session.authenticatedEmail.toLowerCase());
-            const fromDate = document.getElementById('leave-from').value;
-            const toDate = document.getElementById('leave-to').value;
-            if (record && fromDate && toDate) {
-                record.leaveFrom = fromDate; record.leaveTo = toDate;
-                document.getElementById('clear-leave-btn').classList.remove('hidden');
-                pushLog(`Staff member "${record.discordName}" logged leave timeline [${fromDate} to ${toDate}].`, 'STAFF');
-                saveDatabaseToStorage(); showToast("Leave timeline registered and sent to roster desk.", "warning");
-            }
-        }
-
-        function clearLeaveRequest() {
-            const record = db.applicants.find(a => a.email.toLowerCase() === session.authenticatedEmail.toLowerCase());
-            if (record) {
-                delete record.leaveFrom; delete record.leaveTo;
-                document.getElementById('leave-from').value = ''; document.getElementById('leave-to').value = '';
-                document.getElementById('clear-leave-btn').classList.add('hidden');
-                pushLog(`Staff member "${record.discordName}" canceled scheduled leave timeframe.`, 'STAFF');
-                saveDatabaseToStorage(); showToast("Scheduled leave track erased.", "success");
-            }
-        }
-
-        function handleAuthSubmit(e) {
-            e.preventDefault(); const email = document.getElementById('auth-email').value.trim();
-            if (!email.toLowerCase().endsWith('@gmail.com')) { showToast("Identity Error: Requires a valid @gmail.com address.", "error"); return; }
-            session.authenticatedEmail = email; showToast("Gmail Token linked.", "success"); routeCurrentSessionState();
-        }
-
-        function selectPosition(position) {
-            runtime_selectedPosition = position;
-            document.querySelectorAll('.position-card').forEach(card => { card.classList.remove('border-cyber-neon', 'bg-cyber-neon/5'); card.classList.add('border-cyber-border'); });
-            const cardId = `card-${position.replace(' ', '-')}`; const activeCard = document.getElementById(cardId);
-            if(activeCard) { activeCard.classList.remove('border-cyber-border'); activeCard.classList.add('border-cyber-neon', 'bg-cyber-neon/5'); }
-            document.getElementById('form-container').classList.remove('hidden'); document.getElementById('selected-role-badge').innerText = position; document.getElementById('form-position').value = position;
+        // Tab Navigation Router
+        function switchTab(targetTabId) {
+            ['landing', 'recruitment', 'login', 'dashboard'].forEach(tab => {
+                document.getElementById(`tab-${tab}`).classList.add('hidden');
+            });
+            document.getElementById(`tab-${targetTabId}`).classList.remove('hidden');
             
-            const calcToolBox = document.getElementById('pt-calculation-tool-box');
-            if(position === 'PT Maker') {
-                calcToolBox.classList.remove('hidden');
-                document.getElementById('form-calc-tool').required = true;
+            // Layout Adjustments based on active route
+            if (targetTabId === 'dashboard') {
+                document.getElementById('tab-dashboard').classList.remove('hidden');
+                document.getElementById('tab-dashboard').classList.add('flex');
+                document.getElementById('navDashboardBtn').classList.remove('hidden');
+                document.getElementById('logoutBtn').classList.remove('hidden');
             } else {
-                calcToolBox.classList.add('hidden');
-                document.getElementById('form-calc-tool').required = false;
-                document.getElementById('form-calc-tool').value = "None / Unassigned Profile";
+                document.getElementById('tab-dashboard').classList.add('hidden');
+                document.getElementById('tab-dashboard').classList.remove('flex');
+                if (!sessionStorage.getItem('isRcAdminVerified')) {
+                    document.getElementById('navDashboardBtn').classList.add('hidden');
+                    document.getElementById('logoutBtn').classList.add('hidden');
+                }
+            }
+            window.scrollTo(0, 0);
+        }
+
+        // Loader Toggle Utilities
+        function showLoading(status) {
+            const overlay = document.getElementById('loadingOverlay');
+            if (status) overlay.classList.remove('hidden');
+            else overlay.classList.add('hidden');
+        }
+
+        // Submitting application form data straight to Supabase Cloud
+        async function submitApplication(e) {
+            e.preventDefault();
+            showLoading(true);
+
+            const formData = {
+                bgmi_id: document.getElementById('bgmi_id').value.trim(),
+                in_game_name: document.getElementById('in_game_name').value.trim(),
+                discord_username: document.getElementById('discord_username').value.trim(),
+                whatsapp_number: document.getElementById('whatsapp_number').value.trim(),
+                age: parseInt(document.getElementById('age').value),
+                device: document.getElementById('device').value.trim(),
+                role_applied: document.getElementById('role_applied').value,
+                past_experience: document.getElementById('past_experience').value.trim(),
+                why_join: document.getElementById('why_join').value.trim(),
+                status: 'Pending'
+            };
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from('applications')
+                    .insert([formData]);
+
+                if (error) throw error;
+
+                alert("APPLICATION TRANSMITTED SUCCESSFULLY!\nYour core profile data has been broadcasted to the RC Esports management pipeline.");
+                document.getElementById('appForm').reset();
+                switchTab('landing');
+            } catch (err) {
+                console.error("Supabase Transmission Error:", err);
+                alert("DATABASE SYSTEM TIMEOUT: Failed to transmit application protocol. Please verify internet connectivity.");
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Administrative Access Authentication Verification
+        function handleLogin(e) {
+            if (e) e.preventDefault();
+            const inputPass = document.getElementById('adminPassword').value;
+            
+            if (inputPass === PASSKEY_HASH) {
+                sessionStorage.setItem('isRcAdminVerified', 'true');
+                document.getElementById('adminPassword').value = "";
+                switchTab('dashboard');
+                fetchApplications();
+            } else {
+                alert("ACCESS DENIED: Invalid Security Clearance Code Key.");
+            }
+        }
+
+        // Check if admin is logged in on refresh
+        if (sessionStorage.getItem('isRcAdminVerified') === 'true') {
+            switchTab('dashboard');
+            fetchApplications();
+        }
+
+        function handleLogout() {
+            sessionStorage.removeItem('isRcAdminVerified');
+            document.getElementById('navDashboardBtn').classList.add('hidden');
+            document.getElementById('logoutBtn').classList.add('hidden');
+            switchTab('landing');
+        }
+
+        // Fetching stored applications from Supabase live cloud database
+        async function fetchApplications() {
+            if (sessionStorage.getItem('isRcAdminVerified') !== 'true') return;
+            showLoading(true);
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from('applications')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                currentLoadedApplications = data || [];
+                renderDashboardMetricsAndTables();
+            } catch (err) {
+                console.error("Fetch Execution Fault:", err);
+                alert("CLOUD INTEGRATION ERROR: Failed to gather applications data from Supabase pipeline.");
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Compute Metrics & Render UI List
+        function renderDashboardMetricsAndTables() {
+            const tbody = document.getElementById('applicationTableBody');
+            const placeholder = document.getElementById('noDataPlaceholder');
+            
+            tbody.innerHTML = "";
+            
+            let total = currentLoadedApplications.length;
+            let pending = 0;
+            let approved = 0;
+
+            if (total === 0) {
+                placeholder.classList.remove('hidden');
+            } else {
+                placeholder.classList.add('hidden');
+                
+                currentLoadedApplications.forEach((app) => {
+                    if (app.status === 'Pending') pending++;
+                    if (app.status === 'Approved') approved++;
+
+                    let statusBadgeClass = "bg-yellow-950 text-yellow-400 border-yellow-700";
+                    if (app.status === 'Approved') statusBadgeClass = "bg-green-950 text-green-400 border-green-700";
+                    if (app.status === 'Rejected') statusBadgeClass = "bg-red-950 text-red-400 border-red-700";
+
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-gray-900 border-b border-gray-900 transition";
+                    tr.innerHTML = `
+                        <td class="p-3">
+                            <div class="font-bold text-white">${escapeHtml(app.in_game_name)}</div>
+                            <div class="text-[11px] text-gray-400 font-mono tracking-wider">${escapeHtml(app.bgmi_id)}</div>
+                        </td>
+                        <td class="p-3 hidden md:table-cell font-semibold text-gray-300">${escapeHtml(app.role_applied)}</td>
+                        <td class="p-3 hidden sm:table-cell font-mono text-gray-400">${escapeHtml(app.whatsapp_number)}</td>
+                        <td class="p-3">
+                            <span class="px-2 py-0.5 rounded text-[11px] font-bold border ${statusBadgeClass} tracking-wide uppercase">${app.status}</span>
+                        </td>
+                        <td class="p-3 text-right space-x-1 flex justify-end items-center h-full pt-4">
+                            <button onclick="viewDossier(${app.id})" class="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white px-2 py-1 rounded text-xs transition font-bold" title="View Dossier">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                            <button onclick="updateStatus(${app.id}, 'Approved')" class="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs transition font-bold" title="Approve Staff">
+                                <i class="fa-solid fa-check"></i>
+                            </button>
+                            <button onclick="updateStatus(${app.id}, 'Rejected')" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs transition font-bold" title="Reject Application">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
             }
 
-            const dynamicArea = document.getElementById('dynamic-field');
-            dynamicArea.innerHTML = `
-                <div class="bg-cyber-card/40 border border-cyber-border/60 p-4 rounded-xl space-y-3">
-                    <label class="block text-xs font-bold text-cyber-neon uppercase tracking-wider">PREFERRED HOSTING TIME ARRAY <span class="text-rose-500">* (MINIMUM 2 HOURS BLOCK)</span></label>
-                    <input type="text" required id="form-extra" class="w-full bg-cyber-card border border-cyber-border rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyber-neon transition" placeholder="e.g. 7 PM to 9 PM or Night shifts 10 PM - 12 AM">
-                </div>`;
-            document.getElementById('form-container').scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-
-        function handleFormSubmit(e) {
-            e.preventDefault(); const activeTimeInput = parseInt(document.getElementById('form-active-time').value);
-            if (activeTimeInput < 2) { showToast("Submission Rejected: Minimum 2 hours requirement error.", "error"); return; }
-            const chosenExpectation = document.querySelector('input[name="expectation"]:checked').value;
-            const newApp = {
-                id: Date.now(), email: session.authenticatedEmail, name: document.getElementById('form-name').value.trim(),
-                discordName: document.getElementById('form-discord-name').value.trim(), discordUsername: document.getElementById('form-discord-username').value.trim(),
-                whatsapp: document.getElementById('form-whatsapp').value.trim(), instagram: document.getElementById('form-instagram').value.trim(),
-                position: runtime_selectedPosition, age: parseInt(document.getElementById('form-age').value), experience: parseInt(document.getElementById('form-experience').value),
-                activeTime: activeTimeInput, calcTool: document.getElementById('form-calc-tool').value, extra: document.getElementById('form-extra').value.trim(),
-                expectation: chosenExpectation, status: 'Pending', isActive: true
-            };
-            db.applicants = db.applicants.filter(a => a.email.toLowerCase() !== session.authenticatedEmail.toLowerCase());
-            db.applicants.unshift(newApp); pushLog(`Application submitted by ${newApp.name} for position ${newApp.position}.`, 'APPLICANT');
-            saveDatabaseToStorage(); showToast("Application successfully uploaded.", "success"); routeCurrentSessionState();
-        }
-
-        function openStaffGateway() { document.getElementById('view-auth').classList.add('hidden'); document.getElementById('view-login').classList.remove('hidden'); document.getElementById('global-back-nav').classList.remove('hidden'); }
-
-        function handleLogin(event) {
-            event.preventDefault(); const role = document.getElementById('login-role').value; const password = document.getElementById('login-password').value;
-            if((role === 'Head Operator' && password === 'head_admin#rc99') || (role === 'Operator' && password === 'operator_clearance@77')) {
-                session.managementRole = role; document.getElementById('view-login').classList.add('hidden');
-                pushLog(`Administrative session token verified successfully.`, role); routeCurrentSessionState();
-            } else { document.getElementById('login-error').classList.remove('hidden'); }
-        }
-
-        function logout() {
-            if (session.managementRole) { pushLog(`Administrative terminal node released safely.`, session.managementRole); }
-            session.authenticatedEmail = null; session.managementRole = null; routeCurrentSessionState(); showToast("Logged out successfully.", "info");
-        }
-
-        function pushLog(message, actor) {
-            const now = new Date(); const timestamp = now.toISOString().replace('T', ' ').substring(0, 19);
-            db.logs.unshift({ timestamp, message, actor }); saveDatabaseToStorage();
-        }
-
-        function updateStats() {
-            const pending = db.applicants.filter(a => a.status === 'Pending').length;
-            const approved = db.applicants.filter(a => a.status === 'Approved').length;
-            const rejected = db.applicants.filter(a => a.status === 'Rejected').length;
-            let totalWarnings = 0; const approvedNames = db.applicants.filter(a => a.status === 'Approved').map(a => a.discordName);
-            approvedNames.forEach(dName => { totalWarnings += (db.warnings[dName] || 0); });
+            // Update stats layout counters
+            document.getElementById('stat-total').innerText = total;
             document.getElementById('stat-pending').innerText = pending;
             document.getElementById('stat-approved').innerText = approved;
-            document.getElementById('stat-rejected').innerText = rejected;
-            document.getElementById('stat-warnings').innerText = totalWarnings;
         }
 
-        function updateStatus(id, newStatus) {
-            const applicant = db.applicants.find(a => a.id === id);
-            if(applicant) {
-                applicant.status = newStatus; pushLog(`Applicant "${applicant.name}" status changed to ${newStatus}.`, session.managementRole);
-                saveDatabaseToStorage(); updateStats(); renderApplicants(); renderStaffTable(); showToast(`Status updated successfully.`, "success");
+        // Updating candidate application validation status inside cloud database
+        async function updateStatus(applicationId, targetStatus) {
+            if (!confirm(`Are you sure you want to change this applicant's status to [${targetStatus}]?`)) return;
+            showLoading(true);
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from('applications')
+                    .update({ status: targetStatus })
+                    .eq('id', applicationId);
+
+                if (error) throw error;
+
+                alert(`Application has been successfully marked as ${targetStatus}.`);
+                fetchApplications(); // Reload dashboard listings automatically
+            } catch (err) {
+                console.error("Database Update Error:", err);
+                alert("CLOUD UPDATE ERROR: Could not sync application status change to Supabase server.");
+            } finally {
+                showLoading(false);
             }
         }
 
-        function deleteApplication(id) {
-            const app = db.applicants.find(a => a.id === id);
-            if(app) {
-                if(!confirm(`Are you sure you want to purge ${app.name}'s file?`)) return;
-                pushLog(`Permanently deleted recruitment sheet index of "${app.name}".`, session.managementRole);
-                db.applicants = db.applicants.filter(a => a.id !== id);
-                saveDatabaseToStorage(); updateStats(); renderApplicants(); renderStaffTable(); showToast("Application sheet purged.", "info");
-            }
-        }
+        // Open specific file card profile details inside modal popup
+        function viewDossier(id) {
+            const app = currentLoadedApplications.find(a => a.id === id);
+            if (!app) return;
 
-        function addWarning(dName) {
-            if(session.managementRole !== 'Head Operator') { showToast("Access Denied: assignment requires Head Operator permissions.", "error"); return; }
-            db.warnings[dName] = (db.warnings[dName] || 0) + 1;
-            pushLog(`Warning infraction logged against user "${dName}".`, 'Head Operator');
-            if(db.warnings[dName] > 3) {
-                pushLog("Auto-Termination Checked: Warning limit exceeded.", 'SYSTEM');
-                const staff = db.applicants.find(a => a.discordName === dName); if(staff) staff.status = 'Rejected';
-                showToast(`Personnel entry ${dName} auto-removed.`, "error");
-            } else { showToast(`Strike index recorded against ${dName}.`, "warning"); }
-            saveDatabaseToStorage(); updateStats(); renderStaffTable();
-        }
+            const modal = document.getElementById('dossierModal');
+            const content = document.getElementById('dossierContent');
 
-        function terminateEmployee(id) {
-            if(session.managementRole !== 'Head Operator') { showToast("Access Denied: Requires Head Operator permissions.", "error"); return; }
-            const staff = db.applicants.find(a => a.id === id);
-            if(staff) {
-                staff.status = 'Rejected'; pushLog(`Personnel clearance roster for ${staff.name} explicitly revoked.`, 'Head Operator');
-                saveDatabaseToStorage(); updateStats(); renderApplicants(); renderStaffTable(); showToast("Staff deployment asset terminated.", "info");
-            }
-        }
-
-        function updateEmployeeName(id, currentElement) {
-            if (session.managementRole === 'Operator') {
-                showToast("Access Denied: Operators cannot change names.", "error");
-                routeCurrentSessionState(); return;
-            }
-            const staff = db.applicants.find(a => a.id === id); const cleanName = currentElement.value.trim();
-            if(!cleanName) { currentElement.value = staff.discordName; return; }
-            if(staff && staff.discordName !== cleanName) {
-                const oldName = staff.discordName;
-                if(db.warnings[oldName]) { db.warnings[cleanName] = db.warnings[oldName]; delete db.warnings[oldName]; }
-                staff.discordName = cleanName; pushLog(`Personnel pointer updated from "${oldName}" to "${cleanName}".`, session.managementRole);
-                saveDatabaseToStorage(); updateStats(); showToast("Roster handle index corrected.", "success");
-            }
-        }
-
-        function viewEmployeeDossier(id) {
-            const staff = db.applicants.find(a => a.id === id); if (!staff) return;
-            const content = document.getElementById('modal-content-area');
             content.innerHTML = `
-                <div class="space-y-2.5">
-                    <p class="border-b border-cyber-border/40 pb-1"><span class="text-cyber-neon font-bold">Real Name:</span> ${staff.name}</p>
-                    <p class="border-b border-cyber-border/40 pb-1"><span class="text-cyber-neon font-bold">Gmail Address:</span> ${staff.email}</p>
-                    <p class="border-b border-cyber-border/40 pb-1"><span class="text-cyber-neon font-bold">Discord Display:</span> ${staff.discordName}</p>
-                    <p class="border-b border-cyber-border/40 pb-1"><span class="text-cyber-neon font-bold">Discord Handle:</span> @${staff.discordUsername}</p>
-                    <p class="border-b border-cyber-border/40 pb-1"><span class="text-cyber-neon font-bold">WhatsApp:</span> ${staff.whatsapp}</p>
-                    <p class="border-b border-cyber-border/40 pb-1"><span class="text-cyber-neon font-bold">Instagram ID:</span> ${staff.instagram ? '@' + staff.instagram : 'Not Provided'}</p>
-                    <p class="border-b border-cyber-border/40 pb-1"><span class="text-cyber-neon font-bold">Age:</span> ${staff.age} Years</p>
-                    <p class="border-b border-cyber-border/40 pb-1"><span class="text-cyber-neon font-bold">Experience:</span> ${staff.experience} Months</p>
-                    <p class="border-b border-cyber-border/40 pb-1"><span class="text-cyber-neon font-bold">Daily Active Target:</span> ${staff.activeTime} Hours/Day</p>
-                    <p class="border-b border-cyber-border/40 pb-1"><span class="text-cyber-neon font-bold">Calculation Tool:</span> ${staff.calcTool || 'Not Required for Position'}</p>
-                    <div class="bg-cyber-card p-3 rounded-lg border border-cyber-border/40">
-                        <span class="text-amber-400 font-bold block text-[10px] mb-0.5">Preferred Time window:</span>
-                        <p class="italic text-slate-300">"${staff.extra}"</p>
-                    </div>
-                    <div class="bg-cyber-card p-3 rounded-lg border border-cyber-border/40">
-                        <span class="text-amber-400 font-bold block text-[10px] mb-0.5">Expectations:</span>
-                        <p class="font-mono text-slate-300">${staff.expectation}</p>
-                    </div>
-                </div>`;
-            document.getElementById('info-modal').classList.remove('hidden');
-        }
-        function closeInfoModal() { document.getElementById('info-modal').classList.add('hidden'); }
-
-        function switchDashTab(tabName) {
-            document.getElementById('dash-tab-applicants').classList.add('hidden'); document.getElementById('dash-tab-staff').classList.add('hidden'); document.getElementById('dash-tab-logs').classList.add('hidden');
-            document.getElementById('tab-applicants-btn').className = "border-b-2 border-transparent text-cyber-textMuted hover:text-white text-sm font-bold pb-3 flex items-center px-1 transition";
-            document.getElementById('tab-staff-btn').className = "border-b-2 border-transparent text-cyber-textMuted hover:text-white text-sm font-bold pb-3 flex items-center px-1 transition";
-            document.getElementById('tab-logs-btn').className = "border-b-2 border-transparent text-cyber-textMuted hover:text-white text-sm font-bold pb-3 flex items-center px-1 transition";
-            if (tabName === 'applicants') {
-                document.getElementById('dash-tab-applicants').classList.remove('hidden'); document.getElementById('tab-applicants-btn').className = "border-b-2 border-cyber-neon text-white text-sm font-bold pb-3 flex items-center px-1";
-            } else if (tabName === 'staff') {
-                document.getElementById('dash-tab-staff').classList.remove('hidden'); document.getElementById('tab-staff-btn').className = "border-b-2 border-cyber-neon text-white text-sm font-bold pb-3 flex items-center px-1";
-            } else if (tabName === 'logs') {
-                document.getElementById('dash-tab-logs').classList.remove('hidden'); document.getElementById('tab-logs-btn').className = "border-b-2 border-cyber-neon text-white text-sm font-bold pb-3 flex items-center px-1";
-            }
+                <div class="grid grid-cols-2 gap-3 border-b border-gray-800 pb-3 font-mono text-xs">
+                    <div><span class="text-gray-500 uppercase block font-sans font-bold">IGN</span> <strong class="text-white text-sm font-sans">${escapeHtml(app.in_game_name)}</strong></div>
+                    <div><span class="text-gray-500 uppercase block font-sans font-bold">Character ID</span> <strong class="text-white text-sm">${escapeHtml(app.bgmi_id)}</strong></div>
+                    <div><span class="text-gray-500 uppercase block font-sans font-bold">WhatsApp</span> <a href="https://wa.me/${app.whatsapp_number}" target="_blank" class="text-green-400 underline font-bold">${escapeHtml(app.whatsapp_number)}</a></div>
+                    <div><span class="text-gray-500 uppercase block font-sans font-bold">Discord</span> <strong class="text-blue-400">${escapeHtml(app.discord_username)}</strong></div>
+                    <div><span class="text-gray-500 uppercase block font-sans font-bold">Age</span> <strong class="text-white">${app.age} Years</strong></div>
+                    <div><span class="text-gray-500 uppercase block font-sans font-bold">Hardware Device</span> <strong class="text-white">${escapeHtml(app.device)}</strong></div>
+                </div>
+                <div class="pt-2">
+                    <span class="text-xs text-gray-500 font-bold uppercase tracking-wider block mb-1">Target Assigned Role</span>
+                    <p class="bg-gray-950 p-2 border border-gray-800 rounded text-red-400 font-bold heading-font text-xs tracking-wide">${escapeHtml(app.role_applied)}</p>
+                </div>
+                <div class="pt-1">
+                    <span class="text-xs text-gray-500 font-bold uppercase tracking-wider block mb-1">Background Experience Log</span>
+                    <p class="bg-gray-950 p-3 border border-gray-800 rounded text-gray-300 text-xs leading-relaxed whitespace-pre-wrap custom-scrollbar max-h-24 overflow-y-auto font-sans">${escapeHtml(app.past_experience)}</p>
+                </div>
+                <div class="pt-1">
+                    <span class="text-xs text-gray-500 font-bold uppercase tracking-wider block mb-1">Motivation & Dedication Statement</span>
+                    <p class="bg-gray-950 p-3 border border-gray-800 rounded text-gray-300 text-xs leading-relaxed whitespace-pre-wrap custom-scrollbar max-h-24 overflow-y-auto font-sans">${escapeHtml(app.why_join)}</p>
+                </div>
+            `;
+            modal.classList.remove('hidden');
         }
 
-        function renderApplicants() {
-            const container = document.getElementById('applicants-list'); const searchVal = document.getElementById('filter-search').value.toLowerCase();
-            const roleFilter = document.getElementById('filter-role').value; const statusFilter = document.getElementById('filter-status').value;
-            container.innerHTML = "";
-            const filtered = db.applicants.filter(app => {
-                if (app.status === 'Approved') return false; 
-                const matchesSearch = app.name.toLowerCase().includes(searchVal) || app.discordName.toLowerCase().includes(searchVal) || app.email.toLowerCase().includes(searchVal);
-                const matchesRole = roleFilter === 'All' || app.position === roleFilter;
-                const matchesStatus = statusFilter === 'All' || app.status === statusFilter;
-                return matchesSearch && matchesRole && matchesStatus;
-            });
-            if(filtered.length === 0) { container.innerHTML = `<div class="col-span-full bg-cyber-surface/50 border border-cyber-border border-dashed p-10 rounded-xl text-center text-cyber-textMuted text-xs">No active review sheets waiting.</div>`; return; }
-            filtered.forEach(app => {
-                let statusBadge = app.status === 'Pending' ? `<span class="bg-amber-500/10 text-amber-500 border border-amber-500/20 px-2 py-0.5 rounded text-[10px] font-semibold uppercase">Pending</span>` : `<span class="bg-rose-500/10 text-rose-500 border border-rose-500/20 px-2 py-0.5 rounded text-[10px] font-semibold uppercase">Rejected</span>`;
-                let actionControls = app.status === 'Pending' ? `
-                    <div class="flex items-center space-x-2 mt-4 pt-4 border-t border-cyber-border/50">
-                        <button onclick="updateStatus(${app.id}, 'Approved')" class="flex-1 bg-cyber-neon hover:bg-cyber-neonHover text-black text-[11px] font-bold uppercase py-2 rounded-lg transition">Approve</button>
-                        <button onclick="updateStatus(${app.id}, 'Rejected')" class="flex-1 bg-cyber-card border border-cyber-border text-rose-400 text-[11px] font-bold uppercase py-2 rounded-lg transition">Reject</button>
-                        <button onclick="deleteApplication(${app.id})" class="p-2 bg-rose-500/10 hover:bg-rose-600 border border-rose-500/20 text-rose-400 hover:text-white rounded-lg transition"><i class="fa-solid fa-trash"></i></button>
-                    </div>` : `
-                    <div class="mt-4 pt-3 border-t border-cyber-border/40 text-[11px] text-cyber-textMuted flex items-center justify-between">
-                        <button onclick="deleteApplication(${app.id})" class="text-rose-400 hover:underline text-[10px] uppercase font-bold tracking-wider flex items-center"><i class="fa-solid fa-trash-can mr-1"></i> Clear Index</button>
-                        <button onclick="updateStatus(${app.id}, 'Pending')" class="text-cyber-neon hover:underline text-[10px] uppercase font-bold tracking-wider">Re-evaluate</button>
-                    </div>`;
-                
-                let toolLabelRow = app.position === 'PT Maker' ? `<div><span class="text-cyber-textMuted">Tool Stack:</span> <span class="text-white">${app.calcTool}</span></div>` : `<div><span class="text-cyber-textMuted">Tool Stack:</span> <span class="text-slate-500">Not Applicable</span></div>`;
+        // Modal interface dismiss toggles
+        function closeDossierModal() { document.getElementById('dossierModal').classList.add('hidden'); }
+        function openRulebookModal() { document.getElementById('rulebookModal').classList.remove('hidden'); }
+        function closeRulebookModal() { document.getElementById('rulebookModal').classList.add('hidden'); }
 
-                container.innerHTML += `
-                    <div class="bg-cyber-surface border border-cyber-border rounded-xl p-5 flex flex-col justify-between shadow-lg">
-                        <div class="space-y-3">
-                            <div class="flex items-start justify-between">
-                                <div>
-                                    <h4 class="text-white font-bold text-base flex items-center">${app.name}</h4>
-                                    <p class="text-xs text-cyber-neon font-mono">@${app.discordUsername} (${app.email})</p>
-                                </div>
-                                <div class="text-right flex flex-col items-end space-y-1">
-                                    <span class="bg-cyber-card border border-cyber-border px-2 py-0.5 rounded text-[10px] text-white font-semibold font-mono">${app.position}</span>
-                                    ${statusBadge}
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-2 gap-2 bg-cyber-card p-2.5 rounded-lg border border-cyber-border/60 text-[11px]">
-                                <div><span class="text-cyber-textMuted">WhatsApp:</span> <span class="text-white font-mono">${app.whatsapp}</span></div>
-                                <div><span class="text-cyber-textMuted">Instagram:</span> <span class="text-white font-mono">@${app.instagram || 'None'}</span></div>
-                                ${toolLabelRow}
-                                <div><span class="text-cyber-textMuted">Metrics:</span> <span class="text-white">${app.activeTime} Hrs/Day</span></div>
-                            </div>
-                        </div>
-                        ${actionControls}
-                    </div>`;
-            });
-        }
-
-        function renderStaffTable() {
-            const tbody = document.getElementById('staff-table-body'); tbody.innerHTML = "";
-            const deployedStaff = db.applicants.filter(a => a.status === 'Approved'); if(deployedStaff.length === 0) { tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-cyber-textMuted text-xs italic">No active personnel deploy records configured.</td></tr>`; return; }
-            const isOperator = session.managementRole === 'Operator';
-            deployedStaff.forEach(staff => {
-                const strikeCount = db.warnings[staff.discordName] || 0;
-                let availabilityPill = "";
-                if (staff.leaveFrom && staff.leaveTo) {
-                    availabilityPill = `<span class="bg-amber-500/10 text-amber-500 border border-amber-500/20 px-2 py-0.5 rounded text-[9px] font-mono font-bold"><i class="fa-solid fa-plane mr-1"></i>On Leave [${staff.leaveFrom} to ${staff.leaveTo}]</span>`;
-                } else if (staff.isActive === false) {
-                    availabilityPill = `<span class="bg-rose-500/10 text-rose-400 border border-rose-500/20 px-2 py-0.5 rounded text-[9px] font-mono font-bold">● Inactive</span>`;
-                } else {
-                    availabilityPill = `<span class="bg-cyber-neon/10 text-cyber-neon border border-cyber-neon/20 px-2 py-0.5 rounded text-[9px] font-mono font-bold">● Active</span>`;
-                }
-                let warningBadges = strikeCount === 0 ? 
-                    `<span class="inline-flex items-center text-cyber-neon text-xs bg-cyber-neon/5 px-2.5 py-0.5 rounded border border-cyber-neon/20"><i class="fa-solid fa-circle-check mr-1"></i> Standby Clean</span>` :
-                    `<span class="inline-flex items-center text-amber-500 text-xs bg-amber-500/5 px-2.5 py-0.5 rounded border border-amber-500/20"><i class="fa-solid fa-triangle-exclamation mr-1"></i> ${strikeCount} / 3 Strikes</span>`;
-                tbody.innerHTML += `
-                    <tr class="hover:bg-cyber-card/30 transition">
-                        <td class="p-4 space-y-1.5">
-                            <div class="flex items-center space-x-2">
-                                <input type="text" value="${staff.discordName}" onchange="updateEmployeeName(${staff.id}, this)" ${isOperator ? 'readonly' : ''} class="bg-transparent text-white font-bold text-sm border-b border-transparent ${isOperator ? '' : 'hover:border-cyber-textMuted focus:border-cyber-neon'} focus:outline-none px-0.5 py-0.2 transition w-40">
-                                <span class="text-[10px] text-cyber-textMuted font-mono">(@${staff.discordUsername})</span>
-                                <button onclick="viewEmployeeDossier(${staff.id})" class="ml-2 px-2 py-0.5 rounded bg-cyber-neon/10 hover:bg-cyber-neon border border-cyber-neon/20 hover:text-black text-cyber-neon text-[10px] font-bold uppercase transition"><i class="fa-solid fa-address-card mr-1"></i>Info</button>
-                                ${availabilityPill}
-                            </div>
-                            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-cyber-textMuted">
-                                <span class="flex items-center text-slate-300 font-medium"><i class="fa-solid fa-id-badge text-slate-500 mr-1"></i>Name: <strong class="text-white ml-0.5">${staff.name}</strong></span>
-                                <span class="flex items-center text-emerald-400"><i class="fa-brands fa-whatsapp text-emerald-500 mr-1"></i>WA: <strong class="text-slate-200 font-mono ml-0.5">${staff.whatsapp}</strong></span>
-                                <span class="flex items-center text-purple-400"><i class="fa-brands fa-instagram text-purple-500 mr-1"></i>Insta: <strong class="text-slate-200 font-mono ml-0.5">@${staff.instagram || 'None'}</strong></span>
-                                <span class="flex items-center text-amber-400 w-full sm:w-auto mt-0.5 sm:mt-0"><i class="fa-solid fa-clock text-amber-500 mr-1"></i>Lobby: <strong class="text-slate-300 italic ml-0.5">"${staff.extra}"</strong></span>
-                            </div>
-                        </td>
-                        <td class="p-4"><span class="bg-cyber-card border border-cyber-border px-2 py-0.5 rounded text-[10px] text-cyber-neon font-mono font-semibold uppercase">${staff.position}</span></td>
-                        <td class="p-4">${warningBadges}</td>
-                        <td class="p-4 text-right">
-                            <div class="flex items-center justify-end space-x-2">
-                                <button onclick="addWarning('${staff.discordName}')" class="px-2.5 py-1 rounded bg-orange-500/10 hover:bg-orange-500 text-orange-400 hover:text-black font-semibold text-[10px] uppercase tracking-wider transition"><i class="fa-solid fa-bolt"></i> Strike</button>
-                                <button onclick="terminateEmployee(${staff.id})" class="px-2.5 py-1 rounded bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white font-semibold text-[10px] uppercase tracking-wider transition"><i class="fa-solid fa-user-slash"></i> Terminate</button>
-                            </div>
-                        </td>
-                    </tr>`;
-            });
-        }
-
-        function renderSystemLogs() {
-            const stream = document.getElementById('logs-terminal-stream'); if(!stream) return; stream.innerHTML = "";
-            db.logs.forEach(log => {
-                let badgeColor = log.actor === 'Head Operator' ? "text-cyber-neon font-bold" : (log.actor === 'Operator' ? "text-sky-400 font-bold" : "text-amber-400 font-bold");
-                stream.innerHTML += `
-                    <div class="py-1 border-b border-cyber-border/20 leading-relaxed px-2 rounded">
-                        <span class="text-slate-600">[${log.timestamp}]</span> <span class="${badgeColor} text-[10px] uppercase">[${log.actor}]</span> <span class="text-slate-300 ml-1">${log.message}</span>
-                    </div>`;
-            });
-        }
-
-        function clearSystemLogs() {
-            if(session.managementRole !== 'Head Operator') { showToast("Security Violation: Operators hold zero audit wipe clearance.", "error"); return; }
-            db.logs = [{ timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19), message: 'Audit clear sequence completed.', actor: 'SYSTEM' }];
-            saveDatabaseToStorage(); renderSystemLogs();
-        }
-
-        function showToast(msg, type = "success") {
-            const toast = document.getElementById('toast'); const icon = document.getElementById('toast-icon'); const msgEl = document.getElementById('toast-msg');
-            msgEl.innerText = msg; icon.className = type === 'success' ? "fa-solid fa-circle-check text-cyber-neon text-lg" : (type === 'warning' ? "fa-solid fa-triangle-exclamation text-amber-500 text-lg" : "fa-solid fa-circle-xmark text-rose-500 text-lg");
-            toast.classList.remove('translate-y-20', 'opacity-0'); setTimeout(() => { toast.classList.add('translate-y-20', 'opacity-0'); }, 4000);
+        // Sanitize string scripts safely
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
         }
     </script>
 </body>
 </html>
+.
