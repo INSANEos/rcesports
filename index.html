@@ -634,7 +634,7 @@
 
         async function syncWithCloudDatabase() {
             try {
-                const { data: applicantsData } = await supabaseClient.from('applicants').select('*').order('created_at', { ascending: false });
+                const { data: applicantsData, error: appErr } = await supabaseClient.from('applicants').select('*').order('created_at', { ascending: false });
                 const { data: warningsData } = await supabaseClient.from('warnings').select('*');
                 const { data: logsData } = await supabaseClient.from('logs').select('*').order('created_at', { ascending: false });
                 const { data: announceData } = await supabaseClient.from('announcements').select('*').order('created_at', { ascending: false });
@@ -653,7 +653,7 @@
 
             } catch (err) {
                 console.error(err);
-                showToast("Fallback state activated.", "error");
+                showToast("Fallback backup storage active.", "warning");
             }
         }
 
@@ -714,6 +714,10 @@
                     document.getElementById('view-approved').classList.remove('hidden');
                     
                     updateStaffWorkspaceButtons(); renderStaffAnnouncements(); renderStaffChatStream(record.id); renderStaffDirectory();
+                } else if (record.status === 'Rejected') {
+                    // Fallback to form selection card if status dropped to reject
+                    if(!bypassHistoryPush && activeViewTracker !== "portal") pushViewToHistoryState("portal");
+                    document.getElementById('view-portal').classList.remove('hidden');
                 }
                 return;
             }
@@ -739,6 +743,8 @@
                 await pushLog(`Personnel "${record.discordName}" submitted formal resignation exits notice pipeline.`, 'STAFF');
                 reasonInput.value = "";
                 showToast("Resignation packet transmitted safely under 5 days law rule buffer.", "warning");
+                await syncWithCloudDatabase();
+                renderAdminResignationsStream();
             } catch(err) { showToast("Exit notice transmission blocked.", "error"); }
             setDisplayLoader(false);
         }
@@ -907,12 +913,19 @@
             }
         }
 
+        // FEATURE OPTIMIZED: INSTANT DYNAMIC STATE RENDERING FOR FRESH SIGN INS
         async function handleAuthSubmit(e) {
             e.preventDefault(); const email = document.getElementById('auth-email').value.trim();
             if (!email.toLowerCase().endsWith('@gmail.com')) { showToast("Identity Error: Requires a valid @gmail.com address.", "error"); return; }
-            setDisplayLoader(true); session.authenticatedEmail = email;
-            await syncWithCloudDatabase(); showToast("Gmail Token linked.", "success"); setDisplayLoader(false); 
-            pushViewToHistoryState("portal"); routeCurrentSessionState(true);
+            setDisplayLoader(true); 
+            session.authenticatedEmail = email;
+            
+            // Re-trigger live sync query instantly to avoid white screen freeze layouts
+            await syncWithCloudDatabase(); 
+            showToast("Gmail Token linked successfully.", "success"); 
+            setDisplayLoader(false); 
+            
+            routeCurrentSessionState();
         }
 
         function selectPosition(position) {
@@ -958,7 +971,7 @@
                 await pushLog(`Application submitted by ${newApp.name} for position ${newApp.position}.`, 'APPLICANT');
                 await syncWithCloudDatabase(); showToast("Application successfully uploaded.", "success"); 
             } catch(err) { showToast("Database tracking failure.", "error"); }
-            setDisplayLoader(false); pushViewToHistoryState("pending"); routeCurrentSessionState(true);
+            setDisplayLoader(false); routeCurrentSessionState();
         }
 
         function openStaffGateway() { 
@@ -971,14 +984,14 @@
             if((role === 'Head Operator' && password === 'head_admin#rc99') || (role === 'Operator' && password === 'operator_clearance@77')) {
                 setDisplayLoader(true); session.managementRole = role; document.getElementById('view-login').classList.add('hidden');
                 await syncWithCloudDatabase(); await pushLog(`Administrative session token verified successfully.`, role); setDisplayLoader(false); 
-                pushViewToHistoryState("dashboard"); routeCurrentSessionState(true);
+                routeCurrentSessionState();
             } else { document.getElementById('login-error').classList.remove('hidden'); }
         }
 
         function logout() {
             if (session.managementRole) { pushLog(`Administrative terminal node released safely.`, session.managementRole); }
             session.authenticatedEmail = null; session.managementRole = null; showToast("Logged out successfully.", "info");
-            pushViewToHistoryState("auth"); routeCurrentSessionState(true);
+            routeCurrentSessionState();
         }
 
         async function pushLog(message, actor) {
@@ -1149,14 +1162,12 @@
             });
         }
 
-        // FEATURE REconfigured: SEARCH PARAMS LOGIC MAP INJECTED FOR ROSTER RECORDS 
         function renderStaffTable() {
             const tbody = document.getElementById('staff-table-body'); tbody.innerHTML = "";
             const searchVal = document.getElementById('roster-filter-search') ? document.getElementById('roster-filter-search').value.toLowerCase() : "";
             
             const deployedStaff = db.applicants.filter(a => {
                 if (a.status !== 'Approved') return false;
-                // Trace matching inputs across name, nickname, or role fields
                 return a.name.toLowerCase().includes(searchVal) || a.discordName.toLowerCase().includes(searchVal) || a.position.toLowerCase().includes(searchVal);
             });
 
