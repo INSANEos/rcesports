@@ -4,15 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RC Esports Management Portal</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Supabase Core Client CDN Library -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
@@ -46,13 +42,11 @@
 </head>
 <body class="h-full text-slate-200 antialiased selection:bg-cyber-neon selection:text-black">
 
-    <!-- LOADING SHIELD OVERLAY INDICATOR -->
     <div id="loadingOverlay" class="fixed inset-0 bg-black/80 z-[100] flex flex-col items-center justify-center space-y-3 hidden">
         <div class="animate-spin rounded-full h-12 w-12 border-2 border-t-cyber-neon border-cyber-border"></div>
         <p class="heading-cyber text-xs font-bold text-cyber-neon uppercase tracking-widest">Synchronizing Live Database...</p>
     </div>
 
-    <!-- TOP NAVIGATION BAR -->
     <nav class="bg-cyber-surface border-b border-cyber-border sticky top-0 z-50 px-4 lg:px-8 py-3 flex items-center justify-between">
         <div class="flex items-center space-x-3">
             <div class="relative w-12 h-12 flex items-center justify-center bg-cyber-card border border-cyber-neon/40 rounded-xl overflow-hidden shadow-md shadow-cyber-neon/5">
@@ -85,10 +79,8 @@
         </div>
     </nav>
 
-    <!-- MAIN FRAME ROUTER CONTENT -->
     <main class="max-w-7xl mx-auto px-4 lg:px-8 py-8 min-h-[calc(100vh-70px)] flex flex-col justify-center">
 
-        <!-- ==================== VIEW 1: GLOBAL EMAIL ENTRY ==================== -->
         <div id="view-auth" class="max-w-md w-full mx-auto space-y-6 py-8">
             <div class="text-center space-y-3">
                 <div class="relative w-24 h-24 mx-auto bg-cyber-surface border-2 border-cyber-border rounded-2xl overflow-hidden shadow-2xl flex items-center justify-center group">
@@ -115,7 +107,6 @@
             </div>
         </div>
 
-        <!-- ==================== VIEW 2: RECRUITMENT SELECTION ==================== -->
         <div id="view-portal" class="hidden space-y-10">
             <div class="text-center max-w-2xl mx-auto space-y-4 py-4">
                 <span class="px-3 py-1 rounded-full text-xs font-semibold bg-cyber-neon/10 text-cyber-neon border border-cyber-neon/30 tracking-wide uppercase">Profile Active</span>
@@ -169,7 +160,6 @@
                 </div>
             </div>
 
-            <!-- Application Form Container -->
             <div id="form-container" class="hidden max-w-2xl mx-auto bg-cyber-surface border border-cyber-border rounded-2xl p-6 md:p-8 shadow-2xl relative">
                 <div class="absolute top-4 right-4 bg-cyber-card px-3 py-1 rounded-md text-xs font-semibold border border-cyber-border text-cyber-neon" id="selected-role-badge">
                     Selected Role
@@ -260,7 +250,6 @@
             </div>
         </div>
 
-        <!-- ==================== VIEW 3: APPLICATION PENDING ==================== -->
         <div id="view-pending" class="hidden max-w-xl w-full mx-auto text-center space-y-6 py-12">
             <div class="relative inline-block">
                 <div class="w-20 h-20 bg-amber-500/10 border-2 border-amber-500/30 rounded-full flex items-center justify-center text-amber-500 animate-pulse mx-auto">
@@ -278,17 +267,14 @@
             </div>
         </div>
 
-        <!-- ==================== VIEW 4: VERIFIED EMPLOYEE ACTIVE WORKSPACE ==================== -->
         <div id="view-approved" class="hidden max-w-4xl w-full mx-auto space-y-6 py-4">
             
-            <!-- ANNOUNCEMENTS AREA FOR STAFF -->
             <div class="bg-cyber-surface border border-amber-500/30 p-5 rounded-2xl space-y-3">
                 <h3 class="heading-cyber text-xs font-bold text-amber-400 uppercase tracking-widest flex items-center">
                     <i class="fa-solid fa-bullhorn mr-2"></i> Official Core Announcements
                 </h3>
                 <div id="staff-announcements-box" class="space-y-3 max-h-40 overflow-y-auto custom-scrollbar pr-1 text-xs">
-                    <!-- Announcements fetch dynamically -->
-                </div>
+                    </div>
             </div>
 
             <div class="bg-gradient-to-b from-cyber-surface to-[#0e1017] border border-cyber-border rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-2xl space-y-6">
@@ -344,7 +330,6 @@
                     </div>
                 </div>
 
-                <!-- STAFF VIEW OF PERSONAL CHAT HUB -->
                 <div class="p-4 bg-cyber-card border border-cyber-border rounded-2xl space-y-3">
                     <h3 class="heading-cyber text-xs font-bold text-cyber-neon uppercase tracking-widest"><i class="fa-solid fa-comments mr-2"></i> Management Core Chat Desk</h3>
                     <div id="staff-chat-messages-container" class="space-y-2 max-h-48 overflow-y-auto p-3 bg-cyber-bg rounded-xl text-xs custom-scrollbar"></div>
@@ -354,13 +339,11 @@
                     </form>
                 </div>
 
-                <!-- APPROVED STAFF MEMBER DIRECTORY VIEW -->
                 <div class="p-4 bg-cyber-card border border-cyber-border rounded-2xl space-y-3">
                     <h3 class="heading-cyber text-xs font-bold text-white uppercase tracking-widest"><i class="fa-solid fa-users mr-2"></i> Active Staff Directory</h3>
                     <div id="staff-directory-list" class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs"></div>
                 </div>
 
-                <!-- RESIGNATION DESK (STAFF SIDE) -->
                 <div class="p-5 bg-cyber-card border border-rose-500/20 rounded-2xl space-y-3">
                     <h3 class="heading-cyber text-xs font-bold text-rose-400 uppercase tracking-widest flex items-center">
                         <i class="fa-solid fa-user-minus mr-2"></i> Resignation Protocol Core
@@ -378,7 +361,6 @@
                     </form>
                 </div>
 
-                <!-- Command Links -->
                 <div class="p-5 bg-cyber-card border border-cyber-neon/20 rounded-2xl space-y-4">
                     <h3 class="heading-cyber text-xs font-bold text-white uppercase tracking-widest flex items-center text-cyber-neon">
                         <i class="fa-solid fa-link mr-2"></i> Management Command Links
@@ -399,7 +381,6 @@
                     </div>
                 </div>
 
-                <!-- RULES HANDBOOK COMPONENT FRAME -->
                 <div class="p-6 bg-cyber-card border border-cyber-border rounded-2xl space-y-4">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-cyber-border pb-3 gap-2">
                         <h3 class="heading-cyber text-xs font-bold text-white uppercase tracking-widest flex items-center text-rose-400">
@@ -430,7 +411,6 @@
             </div>
         </div>
 
-        <!-- ==================== VIEW 5: STAFF TERMINAL LOGIN ==================== -->
         <div id="view-login" class="hidden max-w-md w-full mx-auto py-6">
             <div class="bg-cyber-surface border border-cyber-border rounded-2xl p-6 md:p-8 shadow-2xl space-y-6">
                 <div class="text-center space-y-2">
@@ -458,7 +438,6 @@
             </div>
         </div>
 
-        <!-- ==================== VIEW 6: MANAGEMENT CONSOLE DASHBOARD ==================== -->
         <div id="view-dashboard" class="hidden space-y-8 py-4">
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <div class="bg-cyber-surface border border-cyber-border p-4 rounded-xl flex items-center justify-between">
@@ -491,7 +470,6 @@
                 </div>
             </div>
 
-            <!-- Tabs Navigation -->
             <div class="flex border-b border-cyber-border space-x-6">
                 <button onclick="switchDashTab('applicants')" id="tab-applicants-btn" class="border-b-2 border-cyber-neon text-white text-sm font-bold pb-3 flex items-center px-1">
                     <i class="fa-solid fa-users-viewfinder mr-2 text-cyber-neon"></i> Recruitment Desk
@@ -510,7 +488,6 @@
                 </button>
             </div>
 
-            <!-- TAB CONTAINER: RECRUITMENT DESK -->
             <div id="dash-tab-applicants" class="space-y-4">
                 <div class="bg-cyber-surface p-4 border border-cyber-border rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-3">
                     <div class="relative flex-1 max-w-md">
@@ -535,7 +512,6 @@
                 <div id="applicants-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
             </div>
 
-            <!-- TAB CONTAINER: ROSTER MATRIX WORKSPACE -->
             <div id="dash-tab-staff" class="hidden space-y-4">
                 <div class="bg-cyber-surface p-4 border border-cyber-border rounded-xl">
                     <div class="relative max-w-md">
@@ -561,15 +537,12 @@
                 </div>
             </div>
 
-            <!-- RESIGNATIONS INBOX VIEW SECTION -->
             <div id="dash-tab-resignations" class="hidden bg-cyber-surface border border-cyber-border rounded-xl p-6 space-y-4">
                 <h3 class="heading-cyber text-sm font-bold text-white border-b border-cyber-border pb-2"><i class="fa-solid fa-envelope-open-text text-rose-400 mr-2"></i>Resignation Submission Stream</h3>
                 <div id="admin-resignations-stream" class="space-y-3 max-h-[450px] overflow-y-auto custom-scrollbar text-xs">
-                    <!-- Resignations list loads dynamically -->
-                </div>
+                    </div>
             </div>
 
-            <!-- ANNOUNCEMENT ENGINE SUITE FOR ADMINS -->
             <div id="dash-tab-announcements" class="hidden bg-cyber-surface border border-cyber-border rounded-xl p-6 space-y-4">
                 <h3 class="heading-cyber text-sm font-bold text-white">Publish New BroadCast</h3>
                 <form onsubmit="postAnnouncement(event)" class="space-y-3 text-xs">
@@ -579,7 +552,6 @@
                 </form>
             </div>
 
-            <!-- TAB CONTAINER: AUDIT LOG STREAMS -->
             <div id="dash-tab-logs" class="hidden bg-cyber-surface border border-cyber-border rounded-xl p-6 space-y-4">
                 <div class="flex items-center justify-between border-b border-cyber-border pb-3">
                     <h3 class="heading-cyber text-sm font-bold text-white">Activity Logs Database</h3>
@@ -590,7 +562,6 @@
         </div>
     </main>
 
-    <!-- ADMIN CHAT LIGHTBOX POP-UP MODAL -->
     <div id="admin-chat-modal" class="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 hidden">
         <div class="bg-cyber-surface border border-cyber-border rounded-2xl max-w-lg w-full p-6 space-y-4 relative shadow-2xl flex flex-col max-h-[85vh]">
             <button onclick="closeAdminChatModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
@@ -603,7 +574,6 @@
         </div>
     </div>
 
-    <!-- INFO POP-UP MODAL -->
     <div id="info-modal" class="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 hidden">
         <div class="bg-cyber-surface border border-cyber-border rounded-2xl max-w-lg w-full p-6 space-y-4 relative shadow-2xl">
             <button onclick="closeInfoModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
@@ -612,13 +582,11 @@
         </div>
     </div>
 
-    <!-- TOAST UTILITY -->
     <div id="toast" class="fixed bottom-5 right-5 z-50 bg-cyber-card border border-cyber-neon/30 text-white px-5 py-3.5 rounded-xl shadow-2xl flex items-center space-x-3 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
         <i id="toast-icon" class="fa-solid fa-circle-check text-cyber-neon text-lg"></i>
         <p id="toast-msg" class="text-xs font-medium"></p>
     </div>
 
-    <!-- PERSISTENT ROUTED CLOUD REALTIME CONNECTION ENGINE -->
     <script>
         const SUPABASE_URL = "https://ippxcvcouyjohcxppllm.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlwcHhjdmNvdXlqb2hjeHBwbGxtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NDczMDAsImV4cCI6MjA5NzUyMzMwMH0.tWJIoV0ZflTFSX-qHlbvi-vIAzsS78hQ52rpyaX-14U";
@@ -696,7 +664,6 @@
         }
 
         function routeCurrentSessionState(bypassHistoryPush = false) {
-            // Force reset all view grids to absolute hidden layer parameters flat
             document.getElementById('view-auth').classList.add('hidden');
             document.getElementById('view-portal').classList.add('hidden');
             document.getElementById('view-pending').classList.add('hidden');
@@ -723,7 +690,6 @@
             if (session.authenticatedEmail) {
                 profile.classList.remove('hidden'); dName.innerText = session.authenticatedEmail.split('@')[0]; dRole.innerText = 'Applicant';
                 
-                // CRASH-SAFE SEARCH HOOK MAP ADJUSTED
                 const record = db.applicants.find(a => a.email && a.email.toLowerCase() === session.authenticatedEmail.toLowerCase());
                 
                 if (!record) { 
@@ -749,7 +715,7 @@
                     document.getElementById('view-approved').classList.remove('hidden');
                     
                     updateStaffWorkspaceButtons(); renderStaffAnnouncements(); renderStaffChatStream(record.id); renderStaffDirectory();
-                } else if (record.status === 'Richmond' || record.status === 'Rejected') {
+                } else if (record.status === 'Rejected') {
                     if(!bypassHistoryPush && activeViewTracker !== "portal") pushViewToHistoryState("portal");
                     document.getElementById('view-portal').classList.remove('hidden');
                 }
@@ -911,7 +877,7 @@
                 try {
                     await supabaseClient.from('applicants').update({ isActive: status }).eq('id', record.id);
                     await pushLog(`Staff member "${record.discordName}" changed operational duty state to ${status ? 'ACTIVE' : 'INACTIVE'}.`, 'STAFF');
-                    updateStaffWorkspaceButtons(); showToast(`Duty status shifted to ${status ? 'Active' : 'Inactive'}.`, "success");
+                    updateStaffWorkspaceButtons(); showToast("Duty status shifted successfully.", "success");
                 } catch(e) { showToast("Cloud failure updating status node.", "error"); }
                 setDisplayLoader(false);
             }
@@ -1011,14 +977,14 @@
             if((role === 'Head Operator' && password === 'head_admin#rc99') || (role === 'Operator' && password === 'operator_clearance@77')) {
                 setDisplayLoader(true); session.managementRole = role; document.getElementById('view-login').classList.add('hidden');
                 await syncWithCloudDatabase(); await pushLog(`Administrative session token verified successfully.`, role); setDisplayLoader(false); 
-                pushViewToHistoryState("dashboard"); routeCurrentSessionState(true);
+                routeCurrentSessionState();
             } else { document.getElementById('login-error').classList.remove('hidden'); }
         }
 
         function logout() {
             if (session.managementRole) { pushLog(`Administrative terminal node released safely.`, session.managementRole); }
             session.authenticatedEmail = null; session.managementRole = null; showToast("Logged out successfully.", "info");
-            pushViewToHistoryState("auth"); routeCurrentSessionState(true);
+            routeCurrentSessionState();
         }
 
         async function pushLog(message, actor) {
@@ -1119,7 +1085,7 @@
                     <p><span class="text-cyber-neon font-bold">Real Name:</span> ${staff.name}</p>
                     <p><span class="text-cyber-neon font-bold">Gmail Address:</span> ${staff.email}</p>
                     <p><span class="text-cyber-neon font-bold">Discord Name:</span> ${staff.discordName}</p>
-                    <p><span class="text-cyber-neon font-bold">Discord Handle:</span> @${staff.discordUsername}</p>
+                    <p><span class="text-cyber-neon font-bold">Discord Handle:</span> @${staff.discordUsername || ''}</p>
                     <p><span class="text-cyber-neon font-bold">WhatsApp:</span> ${staff.whatsapp}</p>
                     <p><span class="text-cyber-neon font-bold">Instagram ID:</span> ${staff.instagram ? '@' + staff.instagram : 'Not Provided'}</p>
                     <p><span class="text-cyber-neon font-bold">Age:</span> ${staff.age} Years</p>
@@ -1214,37 +1180,4 @@
                                 <button onclick="openAdminChatBox(${staff.id}, '${staff.discordName || ''}')" class="px-2 py-0.5 bg-sky-500/10 hover:bg-sky-500 text-sky-400 hover:text-black border border-sky-500/20 text-[10px] font-bold uppercase rounded transition"><i class="fa-solid fa-message mr-1"></i>Chat DM</button>
                             </div>
                         </td>
-                        <td class="p-4"><span class="bg-cyber-card border border-cyber-border px-2 py-0.5 rounded text-[10px] text-cyber-neon font-mono font-semibold uppercase">${staff.position || ''}</span></td>
-                        <td class="p-4 text-amber-500 font-bold">${strikeCount} Strikes</td>
-                        <td class="p-4 text-right">
-                            <button onclick="addWarning('${staff.discordName || ''}')" class="px-2.5 py-1 rounded bg-orange-500/10 hover:bg-orange-500 text-orange-400 hover:text-black font-semibold text-[10px] transition"><i class="fa-solid fa-bolt"></i> Strike</button>
-                            <button onclick="terminateEmployee(${staff.id})" class="px-2.5 py-1 rounded bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white font-semibold text-[10px] transition ml-1"><i class="fa-solid fa-user-slash"></i> Terminate</button>
-                        </td>
-                    </tr>`;
-            });
-        }
-
-        function renderSystemLogs() {
-            const stream = document.getElementById('logs-terminal-stream'); if(!stream) return; stream.innerHTML = "";
-            db.logs.forEach(log => {
-                stream.innerHTML += `<div class="py-1 border-b border-cyber-border/20 px-2"><span class="text-slate-600">[${log.timestamp || ''}]</span> <span class="text-amber-400 font-bold uppercase">[${log.actor || ''}]</span> <span class="text-slate-300 ml-1">${log.message || ''}</span></div>`;
-            });
-        }
-
-        async function clearSystemLogs() {
-            db.logs = []; await supabaseClient.from('logs').delete().neq('actor', 'SYSTEM'); renderSystemLogs();
-        }
-
-        function showToast(msg, type = "success") {
-            const toast = document.getElementById('toast'); const icon = document.getElementById('toast-icon'); const msgEl = document.getElementById('toast-msg');
-            msgEl.innerText = msg; icon.className = type === 'success' ? "fa-solid fa-circle-check text-cyber-neon text-lg" : "fa-solid fa-circle-xmark text-rose-500 text-lg";
-            toast.classList.remove('translate-y-20', 'opacity-0'); setTimeout(() => { toast.classList.add('translate-y-20', 'opacity-0'); }, 4000);
-        }
-
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-        }
-    </script>
-</body>
-</html>
+                        <td class="p-4"><span class="bg-cyber-card border border-cyber-
