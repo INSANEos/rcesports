@@ -721,8 +721,8 @@
             if (session.authenticatedEmail) {
                 profile.classList.remove('hidden'); dName.innerText = session.authenticatedEmail.split('@')[0]; dRole.innerText = 'Applicant';
                 
-                // BULLETPROOF SAFE CONDITIONAL CHECKS
-                const record = db.applicants.find(a => a && a.email && String(a.email).toLowerCase() === String(session.authenticatedEmail).toLowerCase());
+                // FIXED PARSING PATTERN MATTERS BY STRIPPING AND EQUATING STRINGS TO LOWERCASE PROPERLY
+                const record = db.applicants.find(a => a && a.email && String(a.email).trim().toLowerCase() === String(session.authenticatedEmail).trim().toLowerCase());
                 
                 if (!record) { 
                     if(!bypassHistoryPush && activeViewTracker !== "portal") pushViewToHistoryState("portal");
@@ -947,13 +947,9 @@
         async function handleAuthSubmit(e) {
             e.preventDefault(); const email = document.getElementById('auth-email').value.trim();
             if (!email.toLowerCase().endsWith('@gmail.com')) { showToast("Identity Error: Requires a valid @gmail.com address.", "error"); return; }
-            setDisplayLoader(true); 
-            session.authenticatedEmail = email;
-            await syncWithCloudDatabase(); 
-            showToast("Gmail Token linked.", "success"); 
-            setDisplayLoader(false); 
-            pushViewToHistoryState("portal"); 
-            routeCurrentSessionState(true);
+            setDisplayLoader(true); session.authenticatedEmail = email;
+            await syncWithCloudDatabase(); showToast("Gmail Token linked.", "success"); setDisplayLoader(false); 
+            pushViewToHistoryState("portal"); routeCurrentSessionState(true);
         }
 
         function selectPosition(position) {
@@ -1012,7 +1008,7 @@
             if((role === 'Head Operator' && password === 'head_admin#rc99') || (role === 'Operator' && password === 'operator_clearance@77')) {
                 setDisplayLoader(true); session.managementRole = role; document.getElementById('view-login').classList.add('hidden');
                 await syncWithCloudDatabase(); await pushLog(`Administrative session token verified successfully.`, role); setDisplayLoader(false); 
-                routeCurrentSessionState();
+                pushViewToHistoryState("dashboard"); routeCurrentSessionState(true);
             } else { document.getElementById('login-error').classList.remove('hidden'); }
         }
 
@@ -1184,7 +1180,7 @@
                         </div>
                         <div class="flex items-center space-x-2 mt-4 pt-4 border-t border-cyber-border/50">
                             <button onclick="updateStatus(${app.id}, 'Approved')" class="flex-1 bg-cyber-neon hover:bg-cyber-neonHover text-black text-[11px] font-bold uppercase py-2 rounded-lg transition">Approve</button>
-                            <button onclick="updateStatus(${app.id}, 'Rejected')" class="flex-1 bg-cyber-card border border-cyber-border text-rose-400 text-[11px] font-bold uppercase py-2 rounded-lg transition">Reject</button>
+                            <button onclick="updateStatus(${app.id}, 'Rejected')" class="flex-1 bg-cyber-card border border-rose-500 text-rose-400 text-[11px] font-bold uppercase py-2 rounded-lg transition">Reject</button>
                             <button onclick="deleteApplication(${app.id})" class="p-2 bg-rose-500/10 hover:bg-rose-600 border border-rose-500/20 text-rose-400 hover:text-white rounded-lg transition" title="Purge Record"><i class="fa-solid fa-trash"></i></button>
                         </div>
                     </div>`;
