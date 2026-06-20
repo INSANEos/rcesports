@@ -360,6 +360,24 @@
                     <div id="staff-directory-list" class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs"></div>
                 </div>
 
+                <!-- NEW COMPONENT: RESIGNATION DESK (STAFF SIDE) -->
+                <div class="p-5 bg-cyber-card border border-rose-500/20 rounded-2xl space-y-3">
+                    <h3 class="heading-cyber text-xs font-bold text-rose-400 uppercase tracking-widest flex items-center">
+                        <i class="fa-solid fa-user-minus mr-2"></i> Resignation Protocol Core
+                    </h3>
+                    <div class="p-3 bg-rose-500/5 border border-rose-500/10 rounded-xl text-[11px] text-rose-300 leading-relaxed">
+                        <span class="font-bold block text-xs uppercase mb-0.5"><i class="fa-solid fa-gavel"></i> Mandate Law Directive:</span>
+                        As per official RC Esports Operations rules, any deployment exit requires submission flat **5 Days before** the final actual release milestone sequence configuration.
+                    </div>
+                    <form onsubmit="submitStaffResignation(event)" class="space-y-3 text-xs">
+                        <div>
+                            <label class="block text-[10px] text-cyber-textMuted uppercase mb-1">State Official Compulsory Reason *</label>
+                            <textarea id="resignation-reason" required rows="2" class="w-full bg-cyber-surface border border-cyber-border rounded-xl p-3 text-white focus:outline-none focus:border-rose-500" placeholder="Please declare transparent validation details..."></textarea>
+                        </div>
+                        <button type="submit" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold uppercase rounded-xl transition shadow-lg">Transmit Exit Notice</button>
+                    </form>
+                </div>
+
                 <!-- Command Links -->
                 <div class="p-5 bg-cyber-card border border-cyber-neon/20 rounded-2xl space-y-4">
                     <h3 class="heading-cyber text-xs font-bold text-white uppercase tracking-widest flex items-center text-cyber-neon">
@@ -496,6 +514,9 @@
                 <button onclick="switchDashTab('staff')" id="tab-staff-btn" class="border-b-2 border-transparent text-cyber-textMuted hover:text-white text-sm font-bold pb-3 flex items-center px-1 transition">
                     <i class="fa-solid fa-id-card-clip mr-2"></i> Roster Workspace
                 </button>
+                <button onclick="switchDashTab('resignations')" id="tab-resign-btn" class="border-b-2 border-transparent text-cyber-textMuted hover:text-white text-sm font-bold pb-3 flex items-center px-1 transition">
+                    <i class="fa-solid fa-user-minus mr-2"></i> Resignations
+                </button>
                 <button onclick="switchDashTab('announcements')" id="tab-announce-btn" class="border-b-2 border-transparent text-cyber-textMuted hover:text-white text-sm font-bold pb-3 flex items-center px-1 transition">
                     <i class="fa-solid fa-bullhorn mr-2"></i> Announcements
                 </button>
@@ -520,7 +541,7 @@
                             <option value="PT Maker">PT Maker</option>
                         </select>
                         <select id="filter-status" onchange="renderApplicants()" class="bg-cyber-card border border-cyber-border rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                            <option value="All">Statuses (Pending Only)</option>
+                            <option value="All">Statuses (All Indexes)</option>
                             <option value="Pending">Pending Review</option>
                             <option value="Rejected">Rejected Only</option>
                         </select>
@@ -543,6 +564,14 @@
                         </thead>
                         <tbody id="staff-table-body" class="divide-y divide-cyber-border/40"></tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- NEW TAB CONTAINER: RESIGNATIONS INBOX VIEW SECTION -->
+            <div id="dash-tab-resignations" class="hidden bg-cyber-surface border border-cyber-border rounded-xl p-6 space-y-4">
+                <h3 class="heading-cyber text-sm font-bold text-white border-b border-cyber-border pb-2"><i class="fa-solid fa-envelope-open-text text-rose-400 mr-2"></i>Resignation Submission Stream</h3>
+                <div id="admin-resignations-stream" class="space-y-3 max-h-[450px] overflow-y-auto custom-scrollbar text-xs">
+                    <!-- Resignations list loads dynamically -->
                 </div>
             </div>
 
@@ -602,7 +631,7 @@
         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        let db = { applicants: [], warnings: {}, logs: [], announcements: [], staffMessages: [] };
+        let db = { applicants: [], warnings: {}, logs: [], announcements: [], staffMessages: [], resignations: [] };
         let session = { authenticatedEmail: null, managementRole: null };
         let runtime_selectedPosition = null;
         let activeAdminChatStaffId = null;
@@ -648,10 +677,12 @@
                 const { data: logsData } = await supabaseClient.from('logs').select('*').order('created_at', { ascending: false });
                 const { data: announceData } = await supabaseClient.from('announcements').select('*').order('created_at', { ascending: false });
                 const { data: messagesData } = await supabaseClient.from('staff_messages').select('*').order('created_at', { ascending: true });
+                const { data: resignationsData } = await supabaseClient.from('resignations').select('*').order('created_at', { ascending: false });
 
                 db.applicants = applicantsData || [];
                 db.announcements = announceData || [];
                 db.staffMessages = messagesData || [];
+                db.resignations = resignationsData || [];
                 
                 db.warnings = {};
                 if (warningsData) { warningsData.forEach(w => { db.warnings[w.discord_name] = w.count; }); }
@@ -690,7 +721,7 @@
                 profile.classList.remove('hidden');
                 dName.innerText = session.managementRole; dRole.innerText = session.managementRole;
                 document.getElementById('view-dashboard').classList.remove('hidden');
-                updateStats(); renderApplicants(); renderStaffTable(); renderSystemLogs();
+                updateStats(); renderApplicants(); renderStaffTable(); renderSystemLogs(); renderAdminResignationsStream();
                 return;
             }
 
@@ -728,9 +759,50 @@
             profile.classList.add('hidden');
         }
 
-        function renderStaffAnnouncements() {
-            const container = document.getElementById('staff-announcements-box');
+        // DYNAMIC RESIGNATION DISPATCH ENGINE (STAFF SIDE SUBMIT)
+        async function submitStaffResignation(e) {
+            e.preventDefault();
+            const reasonInput = document.getElementById('resignation-reason');
+            const reasonText = reasonInput.value.trim();
+            if(!reasonText) return;
+
+            if(!confirm("Are you sure you want to trigger the resignation matrix? This action logs directly into head operational view arrays.")) return;
+            setDisplayLoader(true);
+
+            const record = db.applicants.find(a => a.email.toLowerCase() === session.authenticatedEmail.toLowerCase());
+            const now = new Date();
+            const timestamp = now.toISOString().replace('T', ' ').substring(0, 19);
+
+            try {
+                await supabaseClient.from('resignations').insert([{ staff_id: record.id, discord_name: record.discordName, position: record.position, reason: reasonText, notice_date: timestamp }]);
+                await pushLog(`Personnel "${record.discordName}" submitted formal resignation exits notice pipeline.`, 'STAFF');
+                reasonInput.value = "";
+                showToast("Resignation packet transmitted safely under 5 days law rule buffer.", "warning");
+            } catch(err) { showToast("Exit notice transmission blocked.", "error"); }
+            setDisplayLoader(false);
+        }
+
+        // RENDER LIVE RESIGNATIONS CARD STREAM (ADMIN SUITE VIEW)
+        function renderAdminResignationsStream() {
+            const container = document.getElementById('admin-resignations-stream');
+            if(!container) return;
             container.innerHTML = "";
+            if(db.resignations.length === 0) { container.innerHTML = `<div class="p-6 bg-cyber-bg border border-cyber-border border-dashed text-center text-cyber-textMuted text-xs">No exit filings or active resignations log arrays stored.</div>`; return; }
+
+            db.resignations.forEach(r => {
+                container.innerHTML += `
+                    <div class="p-4 bg-cyber-card border border-rose-500/30 rounded-xl space-y-2 shadow-lg">
+                        <div class="flex justify-between items-center border-b border-cyber-border pb-1.5">
+                            <div><strong class="text-white text-sm">@${escapeHtml(r.discord_name)}</strong> <span class="bg-cyber-bg border border-cyber-border text-cyber-neon px-2 py-0.2 rounded text-[10px] uppercase ml-1.5">${escapeHtml(r.position)}</span></div>
+                            <span class="text-[10px] text-slate-500 font-mono">Notified: ${r.notice_date}</span>
+                        </div>
+                        <p class="text-slate-300 leading-relaxed pt-0.5"><span class="text-rose-400 font-semibold block text-[11px] uppercase">Declared Exit Reason:</span> "${escapeHtml(r.reason)}"</p>
+                    </div>`;
+            });
+        }
+
+        function renderStaffAnnouncements() {
+            const container = document.getElementById('staff-announcements-box'); container.innerHTML = "";
             if(db.announcements.length === 0) { container.innerHTML = `<p class="text-cyber-textMuted">No broadcasts posted yet.</p>`; return; }
             db.announcements.forEach(a => {
                 container.innerHTML += `
@@ -980,15 +1052,16 @@
             }
         }
 
+        // PURGE DELETE SHEET INDEX protocol RESTORED VAlUES
         async function deleteApplication(id) {
             const app = db.applicants.find(a => a.id === id);
             if(app) {
-                if(!confirm(`Are you sure you want to purge ${app.name}'s file?`)) return;
+                if(!confirm(`Are you sure you want to permanently purge ${app.name}'s application sheet file?`)) return;
                 setDisplayLoader(true);
                 try {
                     await supabaseClient.from('applicants').delete().eq('id', id);
                     await pushLog(`Permanently deleted recruitment sheet index of "${app.name}".`, session.managementRole);
-                    await syncWithCloudDatabase(); updateStats(); renderApplicants(); renderStaffTable(); showToast("Application sheet purged.", "info");
+                    await syncWithCloudDatabase(); updateStats(); renderApplicants(); renderStaffTable(); showToast("Application sheet purged permanently.", "info");
                 } catch(e) { showToast("Purge request dropped.", "error"); }
                 setDisplayLoader(false);
             }
@@ -1061,11 +1134,12 @@
         function closeInfoModal() { document.getElementById('info-modal').classList.add('hidden'); }
 
         function switchDashTab(tabName) {
-            document.getElementById('dash-tab-applicants').classList.add('hidden'); document.getElementById('dash-tab-staff').classList.add('hidden'); document.getElementById('dash-tab-logs').classList.add('hidden'); document.getElementById('dash-tab-announcements').classList.add('hidden');
+            document.getElementById('dash-tab-applicants').classList.add('hidden'); document.getElementById('dash-tab-staff').classList.add('hidden'); document.getElementById('dash-tab-logs').classList.add('hidden'); document.getElementById('dash-tab-announcements').classList.add('hidden'); document.getElementById('dash-tab-resignations').classList.add('hidden');
             document.getElementById('tab-applicants-btn').className = "border-b-2 border-transparent text-cyber-textMuted hover:text-white text-sm font-bold pb-3 flex items-center px-1 transition";
             document.getElementById('tab-staff-btn').className = "border-b-2 border-transparent text-cyber-textMuted hover:text-white text-sm font-bold pb-3 flex items-center px-1 transition";
             document.getElementById('tab-announce-btn').className = "border-b-2 border-transparent text-cyber-textMuted hover:text-white text-sm font-bold pb-3 flex items-center px-1 transition";
             document.getElementById('tab-logs-btn').className = "border-b-2 border-transparent text-cyber-textMuted hover:text-white text-sm font-bold pb-3 flex items-center px-1 transition";
+            document.getElementById('tab-resign-btn').className = "border-b-2 border-transparent text-cyber-textMuted hover:text-white text-sm font-bold pb-3 flex items-center px-1 transition";
             
             if (tabName === 'applicants') {
                 document.getElementById('dash-tab-applicants').classList.remove('hidden'); document.getElementById('tab-applicants-btn').className = "border-b-2 border-cyber-neon text-white text-sm font-bold pb-3 flex items-center px-1";
@@ -1075,6 +1149,8 @@
                 document.getElementById('dash-tab-announcements').classList.remove('hidden'); document.getElementById('tab-announce-btn').className = "border-b-2 border-cyber-neon text-white text-sm font-bold pb-3 flex items-center px-1";
             } else if (tabName === 'logs') {
                 document.getElementById('dash-tab-logs').classList.remove('hidden'); document.getElementById('tab-logs-btn').className = "border-b-2 border-cyber-neon text-white text-sm font-bold pb-3 flex items-center px-1";
+            } else if (tabName === 'resignations') {
+                document.getElementById('dash-tab-resignations').classList.remove('hidden'); document.getElementById('tab-resign-btn').className = "border-b-2 border-cyber-neon text-white text-sm font-bold pb-3 flex items-center px-1";
             }
         }
 
@@ -1090,6 +1166,8 @@
             if(filtered.length === 0) { container.innerHTML = `<div class="col-span-full text-center text-cyber-textMuted text-xs p-6">No matching records found.</div>`; return; }
             filtered.forEach(app => {
                 let statusBadge = app.status === 'Pending' ? `<span class="bg-amber-500/10 text-amber-500 border border-amber-500/20 px-2 py-0.5 rounded text-[10px] font-semibold uppercase">Pending</span>` : `<span class="bg-rose-500/10 text-rose-500 border border-rose-500/20 px-2 py-0.5 rounded text-[10px] font-semibold uppercase">Rejected</span>`;
+                
+                // RESTORED ACTIONS suite WITH DIRECT PURGE DETAILED TRACE VALUES INTACT
                 container.innerHTML += `
                     <div class="bg-cyber-surface border border-cyber-border rounded-xl p-5 flex flex-col justify-between shadow-lg">
                         <div class="space-y-3">
@@ -1107,12 +1185,12 @@
                         <div class="flex items-center space-x-2 mt-4 pt-4 border-t border-cyber-border/50">
                             <button onclick="updateStatus(${app.id}, 'Approved')" class="flex-1 bg-cyber-neon hover:bg-cyber-neonHover text-black text-[11px] font-bold uppercase py-2 rounded-lg transition">Approve</button>
                             <button onclick="updateStatus(${app.id}, 'Rejected')" class="flex-1 bg-cyber-card border border-cyber-border text-rose-400 text-[11px] font-bold uppercase py-2 rounded-lg transition">Reject</button>
+                            <button onclick="deleteApplication(${app.id})" class="p-2 bg-rose-500/10 hover:bg-rose-600 border border-rose-500/20 text-rose-400 hover:text-white rounded-lg transition" title="Purge Record"><i class="fa-solid fa-trash"></i></button>
                         </div>
                     </div>`;
             });
         }
 
-        // FEATURE INTEGRATED: INFO BUTTON MOVED DIRECTLY NEXT TO EMPLOYEE NAME HANDLE
         function renderStaffTable() {
             const tbody = document.getElementById('staff-table-body'); tbody.innerHTML = "";
             const deployedStaff = db.applicants.filter(a => a.status === 'Approved'); if(deployedStaff.length === 0) { tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-cyber-textMuted text-xs">No personnel records found.</td></tr>`; return; }
@@ -1123,7 +1201,6 @@
                         <td class="p-4">
                             <div class="flex items-center space-x-2">
                                 <strong class="text-white">${staff.discordName}</strong>
-                                <!-- INFO BUTTON STRATEGICALLY PLACED NEXT TO THE EMPLOYEE handle DISPLAY NODE -->
                                 <button onclick="viewEmployeeDossier(${staff.id})" class="px-2 py-0.5 rounded bg-cyber-neon/10 hover:bg-cyber-neon border border-cyber-neon/20 hover:text-black text-cyber-neon text-[10px] font-black uppercase transition"><i class="fa-solid fa-address-card mr-1"></i>Info</button>
                                 <button onclick="openAdminChatBox(${staff.id}, '${staff.discordName}')" class="px-2 py-0.5 bg-sky-500/10 hover:bg-sky-500 text-sky-400 hover:text-black border border-sky-500/20 text-[10px] font-bold uppercase rounded transition"><i class="fa-solid fa-message mr-1"></i>Chat DM</button>
                             </div>
