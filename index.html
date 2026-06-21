@@ -507,7 +507,7 @@
                 </div>
             </div>
 
-            <!-- FIXED TABS NAVIGATION LAYOUT ROW WITH SMOOTH HORIZONTAL SCROLL AND NO FLEX-SHRINK SQUISH FOR MOBILE BREAKS -->
+            <!-- TABS NAVIGATION LAYOUT SCROLLABLE ROW -->
             <div class="flex border-b border-cyber-border space-x-6 overflow-x-auto whitespace-nowrap pb-2 custom-scrollbar">
                 <button onclick="switchDashTab('applicants')" id="tab-applicants-btn" class="flex-shrink-0 border-b-2 border-cyber-neon text-white text-sm font-bold pb-3 flex items-center px-1">
                     <i class="fa-solid fa-users-viewfinder mr-2 text-cyber-neon"></i> Recruitment Desk
@@ -1141,13 +1141,14 @@
             }
         }
 
+        // FEATURE PATCHED: REMOVED THE STRICT ACCESS GUARD SO OPERATORS CAN DISPATCH WARNINGS TOO
         async function addWarning(dName) {
-            if(!dName || session.managementRole !== 'Head Operator') { showToast("Access Denied.", "error"); return; }
+            if(!dName) return;
             setDisplayLoader(true); db.warnings[dName] = (db.warnings[dName] || 0) + 1;
             try {
                 await supabaseClient.from('warnings').delete().eq('discord_name', dName);
                 await supabaseClient.from('warnings').insert([{ discord_name: dName, count: db.warnings[dName] }]);
-                await pushLog(`Warning infraction logged against user "${dName}".`, 'Head Operator');
+                await pushLog(`Warning infraction logged against user "${dName}".`, session.managementRole);
                 if(db.warnings[dName] > 3) {
                     const staff = db.applicants.find(a => a && a.discordName === dName); 
                     if(staff) await supabaseClient.from('applicants').update({ status: 'Rejected' }).eq('id', staff.id);
@@ -1235,107 +1236,13 @@
             } else if (tabName === 'announcements') {
                 document.getElementById('dash-tab-announcements').classList.remove('hidden'); document.getElementById('tab-announce-btn').className = "flex-shrink-0 border-b-2 border-cyber-neon text-white text-sm font-bold pb-3 flex items-center px-1";
             } else if (tabName === 'logs') {
-                document.getElementById('dash-tab-logs').classList.remove('hidden'); document.getElementById('tab-logs-btn').className = "flex-shrink-0 border-b-2 border-cyber-neon text-white text-sm font-bold pb-3 flex items-center px-1";
+                document.getElementById('dash-tab-logs').classList.remove('hidden'); document.getElementById('tab-logs-btn').className = "flex-shrink-0 border-b-2 border-transparent text-cyber-textMuted hover:text-white text-sm font-bold pb-3 flex items-center px-1 transition";
             } else if (tabName === 'resignations') {
-                document.getElementById('dash-tab-resignations').classList.remove('hidden'); document.getElementById('tab-resign-btn').className = "flex-shrink-0 border-b-2 border-cyber-neon text-white text-sm font-bold pb-3 flex items-center px-1";
+                document.getElementById('dash-tab-resignations').classList.remove('hidden'); document.getElementById('tab-resign-btn').className = "flex-shrink-0 border-b-2 border-transparent text-cyber-textMuted hover:text-white text-sm font-bold pb-3 flex items-center px-1 transition";
             } else if (tabName === 'pollMetrics') {
                 document.getElementById('dash-tab-pollMetrics').classList.remove('hidden'); document.getElementById('tab-poll-btn').className = "flex-shrink-0 border-b-2 border-cyber-neon text-white text-sm font-bold pb-3 flex items-center px-1";
                 compileAndRenderPollMetrics();
             }
-        }
-
-        function renderApplicants() {
-            const container = document.getElementById('applicants-list'); if(!container) return; const searchVal = document.getElementById('filter-search').value.toLowerCase();
-            const roleFilter = document.getElementById('filter-role').value; const statusFilter = document.getElementById('filter-status').value;
-            container.innerHTML = "";
-            const filtered = db.applicants.filter(app => {
-                if (!app || app.status === 'Approved') return false; 
-                if (!app.name) return false;
-                const matchesSearch = String(app.name).toLowerCase().includes(searchVal) || (app.discordName && String(app.discordName).toLowerCase().includes(searchVal)) || (app.email && String(app.email).toLowerCase().includes(searchVal));
-                return matchesSearch && (roleFilter === 'All' || app.position === roleFilter) && (statusFilter === 'All' || app.status === statusFilter);
-            });
-            if(filtered.length === 0) { container.innerHTML = `<div class="col-span-full text-center text-cyber-textMuted text-xs p-6">No matching records found.</div>`; return; }
-            filtered.forEach(app => {
-                let statusBadge = app.status === 'Pending' ? `<span class="bg-amber-500/10 text-amber-500 border border-amber-500/20 px-2 py-0.5 rounded text-[10px] font-semibold uppercase">Pending</span>` : `<span class="bg-rose-500/10 text-rose-500 border border-rose-500/20 px-2 py-0.5 rounded text-[10px] font-semibold uppercase">Rejected</span>`;
-                
-                container.innerHTML += `
-                    <div class="bg-cyber-surface border border-cyber-border rounded-xl p-5 flex flex-col justify-between shadow-lg">
-                        <div class="space-y-3">
-                            <div class="flex items-start justify-between">
-                                <div>
-                                    <h4 class="text-white font-bold text-base">${escapeHtml(app.name)}</h4>
-                                    <p class="text-xs text-cyber-neon font-mono">@${escapeHtml(app.discordUsername)}</p>
-                                </div>
-                                <div class="text-right flex flex-col items-end space-y-1">
-                                    <span class="bg-cyber-card border border-cyber-border px-2 py-0.5 rounded text-[10px] text-white font-mono">${escapeHtml(app.position)}</span>
-                                    ${statusBadge}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="flex items-center space-x-2 mt-4 pt-4 border-t border-cyber-border/50">
-                            <button onclick="updateStatus(${app.id}, 'Approved')" class="flex-1 bg-cyber-neon hover:bg-cyber-neonHover text-black text-[11px] font-bold uppercase py-2 rounded-lg transition">Approve</button>
-                            <button onclick="updateStatus(${app.id}, 'Rejected')" class="flex-1 bg-cyber-card border border-rose-500 text-rose-400 text-[11px] font-bold uppercase py-2 rounded-lg transition">Reject</button>
-                            <button onclick="deleteApplication(${app.id})" class="p-2 bg-rose-500/10 hover:bg-rose-600 border border-rose-500/20 text-rose-400 hover:text-white rounded-lg transition" title="Purge Record"><i class="fa-solid fa-trash"></i></button>
-                        </div>
-                    </div>`;
-            });
-        }
-
-        function renderStaffTable() {
-            const tbody = document.getElementById('staff-table-body'); if(!tbody) return; tbody.innerHTML = "";
-            const searchVal = document.getElementById('roster-filter-search') ? document.getElementById('roster-filter-search').value.toLowerCase() : "";
-            
-            const deployedStaff = db.applicants.filter(a => {
-                if (!a || a.status !== 'Approved') return false;
-                const nameMatch = a.name && String(a.name).toLowerCase().includes(searchVal);
-                const discordMatch = a.discordName && String(a.discordName).toLowerCase().includes(searchVal);
-                const posMatch = a.position && String(a.position).toLowerCase().includes(searchVal);
-                return nameMatch || discordMatch || posMatch;
-            });
-
-            if(deployedStaff.length === 0) { tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-cyber-textMuted text-xs">No matching personnel records found.</td></tr>`; return; }
-            deployedStaff.forEach(staff => {
-                const strikeCount = db.warnings[staff.discordName] || 0;
-                const trainingStateText = staff.is_trained || 'Untrained';
-                const trainingBtnClass = trainingStateText === 'Trained' ? 'bg-emerald-500 text-black' : 'border border-cyber-border text-amber-500 bg-amber-500/5';
-                
-                tbody.innerHTML += `
-                    <tr class="hover:bg-cyber-card/30 transition">
-                        <td class="p-4">
-                            <div class="flex items-center space-x-2">
-                                <strong class="text-white">${escapeHtml(staff.discordName)}</strong>
-                                <button onclick="viewEmployeeDossier(${staff.id})" class="px-2 py-0.5 rounded bg-cyber-neon/10 hover:bg-cyber-neon border border-cyber-neon/20 hover:text-black text-cyber-neon text-[10px] font-black uppercase transition"><i class="fa-solid fa-address-card mr-1"></i>Info</button>
-                                <button onclick="openAdminChatBox(${staff.id}, '${escapeHtml(staff.discordName)}')" class="px-2 py-0.5 bg-sky-500/10 hover:bg-sky-500 text-sky-400 hover:text-black border border-sky-500/20 text-[10px] font-bold uppercase rounded transition"><i class="fa-solid fa-message mr-1"></i>Chat DM</button>
-                            </div>
-                        </td>
-                        <td class="p-4"><span class="bg-cyber-card border border-cyber-border px-2 py-0.5 rounded text-[10px] text-cyber-neon font-mono font-semibold uppercase">${escapeHtml(staff.position)}</span></td>
-                        <td class="p-4 text-amber-500 font-bold">${strikeCount} Strikes</td>
-                        <td class="p-4 text-right">
-                            <div class="flex items-center justify-end space-x-2">
-                                <button onclick="toggleStaffTrainingState(${staff.id}, '${trainingStateText}')" class="px-2.5 py-1 rounded font-semibold text-[10px] uppercase tracking-wider transition ${trainingBtnClass}"><i class="fa-solid fa-graduation-cap"></i> ${trainingStateText}</button>
-                                <button onclick="addWarning('${escapeHtml(staff.discordName)}')" class="px-2.5 py-1 rounded bg-orange-500/10 hover:bg-orange-500 text-orange-400 hover:text-black font-semibold text-[10px] transition"><i class="fa-solid fa-bolt"></i> Strike</button>
-                                <button onclick="terminateEmployee(${staff.id})" class="px-2.5 py-1 rounded bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white font-semibold text-[10px] transition ml-1"><i class="fa-solid fa-user-slash"></i> Terminate</button>
-                            </div>
-                        </td>
-                    </tr>`;
-            });
-        }
-
-        function renderSystemLogs() {
-            const stream = document.getElementById('logs-terminal-stream'); if(!stream) return; stream.innerHTML = "";
-            db.logs.forEach(log => {
-                stream.innerHTML += `<div class="py-1 border-b border-cyber-border/20 px-2"><span class="text-slate-600">[${escapeHtml(log.timestamp)}]</span> <span class="text-amber-400 font-bold uppercase">[${escapeHtml(log.actor)}]</span> <span class="text-slate-300 ml-1">${escapeHtml(log.message)}</span></div>`;
-            });
-        }
-
-        async function clearSystemLogs() {
-            db.logs = []; await supabaseClient.from('logs').delete().neq('actor', 'SYSTEM'); renderSystemLogs();
-        }
-
-        function showToast(msg, type = "success") {
-            const toast = document.getElementById('toast'); const icon = document.getElementById('toast-icon'); const msgEl = document.getElementById('toast-msg');
-            if(!toast) return; msgEl.innerText = msg; icon.className = type === 'success' ? "fa-solid fa-circle-check text-cyber-neon text-lg" : "fa-solid fa-circle-xmark text-rose-500 text-lg";
-            toast.classList.remove('translate-y-20', 'opacity-0'); setTimeout(() => { toast.classList.add('translate-y-20', 'opacity-0'); }, 4000);
         }
 
         function escapeHtml(str) {
