@@ -493,6 +493,9 @@
                 <button onclick="switchDashTab('staff')" id="tab-staff-btn" class="border-b-2 border-transparent text-cyber-textMuted hover:text-white text-sm font-bold pb-3 flex items-center px-1 transition">
                     <i class="fa-solid fa-id-card-clip mr-2"></i> Roster Workspace
                 </button>
+                <button onclick="switchDashTab('pollMetrics')" id="tab-poll-btn" class="border-b-2 border-transparent text-cyber-textMuted hover:text-white text-sm font-bold pb-3 flex items-center px-1 transition">
+                    <i class="fa-solid fa-square-poll-vertical mr-2"></i> Live Perks Poll
+                </button>
                 <button onclick="switchDashTab('resignations')" id="tab-resign-btn" class="border-b-2 border-transparent text-cyber-textMuted hover:text-white text-sm font-bold pb-3 flex items-center px-1 transition">
                     <i class="fa-solid fa-user-minus mr-2"></i> Resignations
                 </button>
@@ -551,6 +554,16 @@
                         </table>
                     </div>
                 </div>
+            </div>
+
+            <div id="dash-tab-pollMetrics" class="hidden bg-cyber-surface border border-cyber-border rounded-xl p-6 space-y-6">
+                <div class="border-b border-cyber-border pb-3">
+                    <h3 class="heading-cyber text-sm font-bold text-white uppercase tracking-wider"><i class="fa-solid fa-chart-bar text-cyber-neon mr-2"></i>Live Perks Expectations Poll Stream</h3>
+                    <p class="text-[11px] text-cyber-textMuted mt-0.5">Realtime counting metrics compiled directly from current approved staff selections portfolio.</p>
+                </div>
+                
+                <div id="live-poll-charts-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    </div>
             </div>
 
             <div id="dash-tab-resignations" class="hidden bg-cyber-surface border border-cyber-border rounded-xl p-6 space-y-4">
@@ -699,13 +712,12 @@
                 profile.classList.remove('hidden');
                 dName.innerText = session.managementRole; dRole.innerText = session.managementRole;
                 document.getElementById('view-dashboard').classList.remove('hidden');
-                updateStats(); renderApplicants(); renderStaffTable(); renderSystemLogs(); renderAdminResignationsStream();
+                updateStats(); renderApplicants(); renderStaffTable(); renderSystemLogs(); renderAdminResignationsStream(); compileAndRenderPollMetrics();
                 return;
             }
 
             if (session.authenticatedEmail) {
                 profile.classList.remove('hidden'); dName.innerText = session.authenticatedEmail.split('@')[0]; dRole.innerText = 'Applicant';
-                
                 const record = db.applicants.find(a => a && a.email && String(a.email).trim().toLowerCase() === String(session.authenticatedEmail).trim().toLowerCase());
                 
                 if (!record) { 
@@ -729,7 +741,6 @@
                     const strikeCount = db.warnings[record.discordName] || 0;
                     document.getElementById('employee-strike-count').innerText = `${strikeCount} / 3 Strikes`;
                     
-                    // FEATURE COUPLING: INJECT TRAINING BADGE STATE INFO FOR LOGGED STAFF VIEW
                     const trainingBadge = document.getElementById('employee-training-badge');
                     const isTrainedState = record.is_trained || 'Untrained';
                     if (isTrainedState === 'Trained') {
@@ -751,6 +762,54 @@
             }
             document.getElementById('view-auth').classList.remove('hidden');
             profile.classList.add('hidden');
+        }
+
+        // FEATURE INTEGRATION ROUTINE: LIVE COMPILATION POLL CALC MATRIX 
+        function compileAndRenderPollMetrics() {
+            const container = document.getElementById('live-poll-charts-grid');
+            if(!container) return;
+
+            // Filter out only approved actual deployment staff layers
+            const activeStaffList = db.applicants.filter(a => a && a.status === 'Approved');
+
+            // Initialize total counts array categories
+            let pollMap = {
+                "IN REAL PRIZES [related to esports]": [],
+                "NITRO ID'S": [],
+                "REAL CASH": [],
+                "WORK EXPERIENCE": []
+            };
+
+            // Process data metrics mapping labels loops safely
+            activeStaffList.forEach(staff => {
+                const choice = staff.expectation;
+                if(pollMap[choice] !== undefined) {
+                    pollMap[choice].push(staff.discordName || staff.name || 'Anonymous');
+                }
+            });
+
+            container.innerHTML = "";
+
+            // Dynamic layout mapping cards generator loops
+            Object.keys(pollMap).forEach(key => {
+                const votersArray = pollMap[key];
+                const totalVotesCount = votersArray.length;
+                
+                // Build layout voters display tags strings
+                let votersString = totalVotesCount > 0 ? votersArray.map(name => `@${name}`).join(', ') : 'No votes inside segment shell';
+
+                container.innerHTML += `
+                    <div class="bg-cyber-card border border-cyber-border p-5 rounded-2xl relative shadow-md">
+                        <div class="flex justify-between items-start mb-3">
+                            <h4 class="text-xs font-bold font-mono text-white tracking-wide uppercase max-w-[75%] leading-relaxed">${key}</h4>
+                            <span class="bg-cyber-neon/10 text-cyber-neon border border-cyber-neon/30 text-xs font-bold font-mono px-2.5 py-1 rounded-xl shadow-inner">${totalVotesCount} Personnel</span>
+                        </div>
+                        <div class="bg-cyber-surface/60 border border-cyber-border/40 p-3 rounded-xl text-[11px]">
+                            <span class="text-cyber-textMuted uppercase font-bold text-[9px] tracking-wider block mb-1"><i class="fa-solid fa-users text-cyber-neon mr-1"></i> Selection Footprints:</span>
+                            <p class="text-slate-300 break-words leading-relaxed">${escapeHtml(votersString)}</p>
+                        </div>
+                    </div>`;
+            });
         }
 
         async function submitStaffResignation(e) {
@@ -1104,16 +1163,13 @@
             }
         }
 
-        // FEATURE INJECTION: TRAINING CONTROL LAYER SWITCH SYSTEM FOR ADMINS PANEL
         async function toggleStaffTrainingState(id, currentStatus) {
             setDisplayLoader(true);
             const targetState = currentStatus === 'Trained' ? 'Untrained' : 'Trained';
             try {
                 await supabaseClient.from('applicants').update({ is_trained: targetState }).eq('id', id);
                 await pushLog(`Personnel deployment training profile adjusted to [${targetState}].`, session.managementRole);
-                await syncWithCloudDatabase();
-                renderStaffTable();
-                showToast(`Staff profiling mapped as ${targetState}.`, "success");
+                await syncWithCloudDatabase(); renderStaffTable(); showToast(`Staff profiling mapped as ${targetState}.`, "success");
             } catch(err) { showToast("Failed to write training switch.", "error"); }
             setDisplayLoader(false);
         }
@@ -1141,12 +1197,13 @@
         function closeInfoModal() { document.getElementById('info-modal').classList.add('hidden'); }
 
         function switchDashTab(tabName) {
-            document.getElementById('dash-tab-applicants').classList.add('hidden'); document.getElementById('dash-tab-staff').classList.add('hidden'); document.getElementById('dash-tab-logs').classList.add('hidden'); document.getElementById('dash-tab-announcements').classList.add('hidden'); document.getElementById('dash-tab-resignations').classList.add('hidden');
+            document.getElementById('dash-tab-applicants').classList.add('hidden'); document.getElementById('dash-tab-staff').classList.add('hidden'); document.getElementById('dash-tab-logs').classList.add('hidden'); document.getElementById('dash-tab-announcements').classList.add('hidden'); document.getElementById('dash-tab-resignations').classList.add('hidden'); document.getElementById('dash-tab-pollMetrics').classList.add('hidden');
             document.getElementById('tab-applicants-btn').className = "border-b-2 border-transparent text-cyber-textMuted hover:text-white text-sm font-bold pb-3 flex items-center px-1 transition";
             document.getElementById('tab-staff-btn').className = "border-b-2 border-transparent text-cyber-textMuted hover:text-white text-sm font-bold pb-3 flex items-center px-1 transition";
             document.getElementById('tab-announce-btn').className = "border-b-2 border-transparent text-cyber-textMuted hover:text-white text-sm font-bold pb-3 flex items-center px-1 transition";
             document.getElementById('tab-logs-btn').className = "border-b-2 border-transparent text-cyber-textMuted hover:text-white text-sm font-bold pb-3 flex items-center px-1 transition";
             document.getElementById('tab-resign-btn').className = "border-b-2 border-transparent text-cyber-textMuted hover:text-white text-sm font-bold pb-3 flex items-center px-1 transition";
+            document.getElementById('tab-poll-btn').className = "border-b-2 border-transparent text-cyber-textMuted hover:text-white text-sm font-bold pb-3 flex items-center px-1 transition";
             
             if (tabName === 'applicants') {
                 document.getElementById('dash-tab-applicants').classList.remove('hidden'); document.getElementById('tab-applicants-btn').className = "border-b-2 border-cyber-neon text-white text-sm font-bold pb-3 flex items-center px-1";
@@ -1158,6 +1215,9 @@
                 document.getElementById('dash-tab-logs').classList.remove('hidden'); document.getElementById('tab-logs-btn').className = "border-b-2 border-cyber-neon text-white text-sm font-bold pb-3 flex items-center px-1";
             } else if (tabName === 'resignations') {
                 document.getElementById('dash-tab-resignations').classList.remove('hidden'); document.getElementById('tab-resign-btn').className = "border-b-2 border-cyber-neon text-white text-sm font-bold pb-3 flex items-center px-1";
+            } else if (tabName === 'pollMetrics') {
+                document.getElementById('dash-tab-pollMetrics').classList.remove('hidden'); document.getElementById('tab-poll-btn').className = "border-b-2 border-cyber-neon text-white text-sm font-bold pb-3 flex items-center px-1";
+                compileAndRenderPollMetrics();
             }
         }
 
@@ -1198,7 +1258,6 @@
             });
         }
 
-        // FEATURE PATChED: ADDED INTERACTIVE TRAINING TRIGGER SWITCH INSIDE PERSONNEL ROW CELL DATA
         function renderStaffTable() {
             const tbody = document.getElementById('staff-table-body'); if(!tbody) return; tbody.innerHTML = "";
             const searchVal = document.getElementById('roster-filter-search') ? document.getElementById('roster-filter-search').value.toLowerCase() : "";
@@ -1214,8 +1273,6 @@
             if(deployedStaff.length === 0) { tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-cyber-textMuted text-xs">No matching personnel records found.</td></tr>`; return; }
             deployedStaff.forEach(staff => {
                 const strikeCount = db.warnings[staff.discordName] || 0;
-                
-                // Set layout text based on current is_trained field
                 const trainingStateText = staff.is_trained || 'Untrained';
                 const trainingBtnClass = trainingStateText === 'Trained' ? 'bg-emerald-500 text-black' : 'border border-cyber-border text-amber-500 bg-amber-500/5';
                 
@@ -1234,7 +1291,7 @@
                             <div class="flex items-center justify-end space-x-2">
                                 <button onclick="toggleStaffTrainingState(${staff.id}, '${trainingStateText}')" class="px-2.5 py-1 rounded font-semibold text-[10px] uppercase tracking-wider transition ${trainingBtnClass}"><i class="fa-solid fa-graduation-cap"></i> ${trainingStateText}</button>
                                 <button onclick="addWarning('${escapeHtml(staff.discordName)}')" class="px-2.5 py-1 rounded bg-orange-500/10 hover:bg-orange-500 text-orange-400 hover:text-black font-semibold text-[10px] transition"><i class="fa-solid fa-bolt"></i> Strike</button>
-                                <button onclick="terminateEmployee(${staff.id})" class="px-2.5 py-1 rounded bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white font-semibold text-[10px] transition"><i class="fa-solid fa-user-slash"></i> Terminate</button>
+                                <button onclick="terminateEmployee(${staff.id})" class="px-2.5 py-1 rounded bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white font-semibold text-[10px] transition ml-1"><i class="fa-solid fa-user-slash"></i> Terminate</button>
                             </div>
                         </td>
                     </tr>`;
