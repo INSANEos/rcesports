@@ -588,6 +588,31 @@
         </div>
     </main>
 
+    <div id="admin-chat-modal" class="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 hidden">
+        <div class="bg-cyber-surface border border-cyber-border rounded-2xl max-w-lg w-full p-6 space-y-4 relative shadow-2xl flex flex-col max-h-[85vh]">
+            <button onclick="closeAdminChatModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+            <h3 id="admin-chat-title" class="heading-cyber text-sm font-bold text-cyber-neon uppercase tracking-widest border-b border-cyber-border pb-2">Staff Terminal DM</h3>
+            <div id="admin-chat-stream" class="space-y-2 overflow-y-auto flex-1 p-3 bg-cyber-bg rounded-xl text-xs min-h-[250px] custom-scrollbar"></div>
+            <form onsubmit="sendAdminChatMessage(event)" class="flex space-x-2 text-xs">
+                <input type="text" id="admin-chat-input" required class="flex-1 bg-cyber-card border border-cyber-border rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-cyber-neon" placeholder="Type administrative response...">
+                <button type="submit" class="bg-cyber-neon hover:bg-cyber-neonHover text-black px-4 py-2.5 rounded-xl font-bold uppercase">Send</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="info-modal" class="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 hidden">
+        <div class="bg-cyber-surface border border-cyber-border rounded-2xl max-w-lg w-full p-6 space-y-4 relative shadow-2xl">
+            <button onclick="closeInfoModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+            <h3 class="heading-cyber text-sm font-bold text-cyber-neon uppercase tracking-widest border-b border-cyber-border pb-2"><i class="fa-solid fa-circle-info mr-2"></i>Full Personnel Dossier</h3>
+            <div id="modal-content-area" class="space-y-3 text-xs text-slate-300 overflow-y-auto max-h-[450px] pr-1"></div>
+        </div>
+    </div>
+
+    <div id="toast" class="fixed bottom-5 right-5 z-50 bg-cyber-card border border-cyber-neon/30 text-white px-5 py-3.5 rounded-xl shadow-2xl flex items-center space-x-3 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-cyber-neon text-lg"></i>
+        <p id="toast-msg" class="text-xs font-medium"></p>
+    </div>
+
     <script>
         const SUPABASE_URL = "https://ippxcvcouyjohcxppllm.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlwcHhjdmNvdXlqb2hjeHBwbGxtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NDczMDAsImV4cCI6MjA5NzUyMzMwMH0.tWJIoV0ZflTFSX-qHlbvi-vIAzsS78hQ52rpyaX-14U";
@@ -658,7 +683,7 @@
                 db.resignations = resResign.data || [];
 
             } catch (err) {
-                console.error("Database sync error", err);
+                console.error("Database sync caught error", err);
             }
         }
 
@@ -783,7 +808,7 @@
             });
         }
 
-        // CONDITIONAL OPTIONAL SLOT EXPANSION MAPPING INTERFACES
+        // RESPONSIBLY ADJUST FORMS BASED ON THE USER ROLE ASSIGNED
         function selectPosition(position) {
             runtime_selectedPosition = position;
             document.querySelectorAll('.position-card').forEach(card => { card.classList.remove('border-cyber-neon', 'bg-cyber-neon/5'); card.classList.add('border-cyber-border'); });
@@ -900,7 +925,6 @@
             setDisplayLoader(false);
         }
 
-        // RE-ENGINEERED WITH ACTIONS ENGINE AND PURGE FILTERS FOR ONLY HEAD OPERATORS
         function renderAdminResignationsStream() {
             const container = document.getElementById('admin-resignations-stream');
             if(!container) return; container.innerHTML = "";
@@ -929,7 +953,6 @@
             if(!confirm(`Confirm approval for @${dName}'s resignation deployment?`)) return;
             setDisplayLoader(true);
             try {
-                // Find candidate record profile index map match strings
                 const targetStaff = db.applicants.find(a => a && a.discordName === dName);
                 if (targetStaff) {
                     await supabaseClient.from('applicants').update({ status: 'Rejected' }).eq('id', targetStaff.id);
@@ -956,13 +979,11 @@
             setDisplayLoader(false);
         }
 
-        // RENDER LIVE MULTIMEDIA EMBEDDED BROADCAST ANNOUNCEMENTS
         function renderStaffAnnouncements() {
             const container = document.getElementById('staff-announcements-box'); if(!container) return; container.innerHTML = "";
             if(db.announcements.length === 0) { container.innerHTML = `<p class="text-cyber-textMuted">No broadcasts posted yet.</p>`; return; }
             
             db.announcements.forEach(a => {
-                // Injected dynamic media wrapper structure validation elements
                 const photoHtml = a.instagram && String(a.instagram).trim() ? `<div class="mt-2.5 max-w-full rounded-xl overflow-hidden border border-cyber-border bg-black/40"><img src="${escapeHtml(a.instagram)}" class="max-h-64 object-contain mx-auto w-auto" alt="Broadcast Asset" onerror="this.style.display='none'"></div>` : '';
                 const deleteActionBtn = (session.managementRole === 'Head Operator' || session.managementRole === 'Operator') ? `<button onclick="purgeSystemAnnouncement(${a.id})" class="text-rose-400 hover:text-rose-500 font-bold uppercase text-[9px] tracking-wider"><i class="fa-solid fa-trash-can mr-1"></i>Delete</button>` : '';
 
@@ -986,7 +1007,6 @@
             const author = session.managementRole;
 
             try {
-                // Utilizing instagram field node mapping slots securely to pass live photo parameters raw strings
                 await supabaseClient.from('announcements').insert([{ title, content, author, instagram: photoUrl }]);
                 await pushLog(`New dynamic core broadcast published: "${title}"`, author);
                 await syncWithCloudDatabase();
@@ -1137,9 +1157,12 @@
             }
         }
 
-        function openStaffGateway() { 
-            document.getElementById('view-auth').classList.add('hidden'); document.getElementById('view-login').classList.remove('hidden'); document.getElementById('global-back-nav').classList.remove('hidden'); 
-            pushViewToHistoryState("login");
+        async function handleAuthSubmit(e) {
+            e.preventDefault(); const email = document.getElementById('auth-email').value.trim();
+            if (!email.toLowerCase().endsWith('@gmail.com')) { showToast("Identity Error: Requires a valid @gmail.com address.", "error"); return; }
+            setDisplayLoader(true); session.authenticatedEmail = email;
+            await syncWithCloudDatabase(); showToast("Gmail Token linked.", "success"); setDisplayLoader(false); 
+            pushViewToHistoryState("portal"); routeCurrentSessionState(true);
         }
 
         async function handleLogin(event) {
@@ -1280,7 +1303,7 @@
             document.getElementById('tab-announce-btn').className = "flex-shrink-0 border-b-2 border-transparent text-cyber-textMuted hover:text-white text-sm font-bold pb-3 flex items-center px-1 transition";
             document.getElementById('tab-logs-btn').className = "flex-shrink-0 border-b-2 border-transparent text-cyber-textMuted hover:text-white text-sm font-bold pb-3 flex items-center px-1 transition";
             document.getElementById('tab-resign-btn').className = "flex-shrink-0 border-b-2 border-transparent text-cyber-textMuted hover:text-white text-sm font-bold pb-3 flex items-center px-1 transition";
-            document.getElementById('tab-poll-btn').className = "flex-shrink-0 border-b-2 border-cyber-neon text-white text-sm font-bold pb-3 flex items-center px-1";
+            document.getElementById('tab-poll-btn').className = "flex-shrink-0 border-b-2 border-transparent text-cyber-textMuted hover:text-white text-sm font-bold pb-3 flex items-center px-1 transition";
             
             if (tabName === 'applicants') {
                 document.getElementById('dash-tab-applicants').classList.remove('hidden'); document.getElementById('tab-applicants-btn').className = "flex-shrink-0 border-b-2 border-cyber-neon text-white text-sm font-bold pb-3 flex items-center px-1";
