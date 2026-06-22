@@ -273,7 +273,8 @@
                 <h3 class="heading-cyber text-xs font-bold text-amber-400 uppercase tracking-widest flex items-center">
                     <i class="fa-solid fa-bullhorn mr-2"></i> Official Core Announcements
                 </h3>
-                <div id="staff-announcements-box" class="space-y-3 max-h-60 overflow-y-auto custom-scrollbar pr-1 text-xs"></div>
+                <div id="staff-announcements-box" class="space-y-3 max-h-40 overflow-y-auto custom-scrollbar pr-1 text-xs">
+                    </div>
             </div>
 
             <div class="bg-gradient-to-b from-cyber-surface to-[#0e1017] border border-cyber-border rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-2xl space-y-6">
@@ -572,7 +573,6 @@
                 <h3 class="heading-cyber text-sm font-bold text-white">Publish New BroadCast</h3>
                 <form onsubmit="postAnnouncement(event)" class="space-y-3 text-xs">
                     <input type="text" id="announce-title" required class="w-full bg-cyber-card border border-cyber-border rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-cyber-neon" placeholder="Announcement Title...">
-                    <input type="text" id="announce-photo" class="w-full bg-cyber-card border border-cyber-border rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-cyber-neon" placeholder="Announcement Graphic Protocol Image Link URL (Optional)...">
                     <textarea id="announce-content" required rows="3" class="w-full bg-cyber-card border border-cyber-border rounded-xl p-4 text-white focus:outline-none focus:border-cyber-neon" placeholder="Write message summary here..."></textarea>
                     <button type="submit" class="bg-cyber-neon hover:bg-cyber-neonHover text-black px-5 py-2.5 rounded-xl font-bold uppercase transition">Broadcast Protocol</button>
                 </form>
@@ -614,83 +614,56 @@
     </div>
 
     <script>
-        // GLOBAL TOAST FRAME INJECTED EARLY TO PREVENT UNHANDLED PROMISE REJECTIONS
-        function showToast(msg, type = "success") {
-            const toast = document.getElementById('toast'); 
-            const icon = document.getElementById('toast-icon'); 
-            const msgEl = document.getElementById('toast-msg');
-            if(!toast || !msgEl || !icon) return; 
-            msgEl.innerText = msg; 
-            icon.className = type === 'success' ? "fa-solid fa-circle-check text-cyber-neon text-lg" : "fa-solid fa-circle-xmark text-rose-500 text-lg";
-            toast.classList.remove('translate-y-20', 'opacity-0'); 
-            setTimeout(() => { toast.classList.add('translate-y-20', 'opacity-0'); }, 4000);
-        }
-    </script>
+        const SUPABASE_URL = "https://ippxcvcouyjohcxppllm.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlwcHhjdmNvdXlqb2hjeHBwbGxtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NDczMDAsImV4cCI6MjA5NzUyMzMwMH0.tWJIoV0ZflTFSX-qHlbvi-vIAzsS78hQ52rpyaX-14U";
+        
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    <script>
-        // MAIN ROUTING PARSING MATRIX
-        function selectPosition(position) {
-            runtime_selectedPosition = position;
-            document.querySelectorAll('.position-card').forEach(card => { card.classList.remove('border-cyber-neon', 'bg-cyber-neon/5'); card.classList.add('border-cyber-border'); });
-            const cardId = `card-${position.replace(' ', '-')}`; const activeCard = document.getElementById(cardId);
-            if(activeCard) { activeCard.classList.remove('border-cyber-border'); activeCard.classList.add('border-cyber-neon', 'bg-cyber-neon/5'); }
-            document.getElementById('form-container').classList.remove('hidden'); document.getElementById('selected-role-badge').innerText = position; document.getElementById('form-position').value = position;
-            
-            const calcToolBox = document.getElementById('pt-calculation-tool-box');
-            if(position === 'PT Maker') {
-                if(calcToolBox) calcToolBox.classList.remove('hidden'); document.getElementById('form-calc-tool').required = true;
-            } else {
-                if(calcToolBox) calcToolBox.classList.add('hidden'); document.getElementById('form-calc-tool').required = false; document.getElementById('form-calc-tool').value = "None / Unassigned Profile";
-            }
+        let db = { applicants: [], warnings: {}, logs: [], announcements: [], staffMessages: [], resignations: [] };
+        let session = { authenticatedEmail: null, managementRole: null };
+        let runtime_selectedPosition = null;
+        let activeAdminChatStaffId = null;
 
-            const dynamicArea = document.getElementById('dynamic-field');
-            if(dynamicArea) {
-                if (position === 'Host') {
-                    dynamicArea.innerHTML = `
-                        <div class="bg-cyber-card/40 border border-cyber-border/60 p-4 rounded-xl space-y-4">
-                            <label class="block text-xs font-bold text-cyber-neon uppercase tracking-wider">PREFERRED HOSTING TIME ARRAY <span class="text-rose-500">* (MAX 2 SLOTS - 2 HOURS EACH)</span></label>
-                            <div class="space-y-3 text-xs">
-                                <div>
-                                    <label class="block text-cyber-textMuted uppercase text-[10px] mb-1">Slot 1 Time Window *</label>
-                                    <input type="text" required id="form-host-slot1" class="w-full bg-cyber-card border border-cyber-border rounded-xl px-3 py-2 text-white focus:outline-none focus:border-cyber-neon" placeholder="e.g. 3pm - 5pm">
-                                </div>
-                                <button type="button" id="add-slot2-trigger-btn" onclick="revealOptionalSecondSlot()" class="text-xs font-bold text-cyber-neon hover:underline inline-flex items-center uppercase py-1"><i class="fa-solid fa-circle-plus mr-1.5"></i> + Add Second Hosting Slot</button>
-                                <div id="optional-slot2-box" class="hidden border-t border-cyber-border/40 pt-3">
-                                    <label class="block text-cyber-textMuted uppercase text-[10px] mb-1">Slot 2 Time Window (Optional)</label>
-                                    <input type="text" id="form-host-slot2" class="w-full bg-cyber-card border border-cyber-border rounded-xl px-3 py-2 text-white focus:outline-none focus:border-cyber-neon" placeholder="e.g. 7pm - 9pm">
-                                </div>
-                            </div>
-                        </div>`;
-                } else if (position === 'VC Moderator' || position === 'Chat Moderator') {
-                    dynamicArea.innerHTML = `
-                        <div class="bg-cyber-card/40 border border-cyber-border/60 p-4 rounded-xl space-y-2">
-                            <label class="block text-xs font-bold text-cyber-neon uppercase tracking-wider">PREFERRED TIMINGS TO MODERATE VOICE/TEXT CHANNELS <span class="text-rose-500">*</span></label>
-                            <input type="text" required id="form-mod-time" class="w-full bg-cyber-card border border-cyber-border rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyber-neon transition" placeholder="e.g. 4pm - 6pm or Night slots">
-                        </div>`;
-                } else {
-                    dynamicArea.innerHTML = `
-                        <div class="bg-cyber-card/40 border border-cyber-border/60 p-4 rounded-xl space-y-2">
-                            <label class="block text-xs font-bold text-cyber-neon uppercase tracking-wider">PREFERRED WORKING TIMINGS <span class="text-rose-500">*</span></label>
-                            <input type="text" required id="form-general-time" class="w-full bg-cyber-card border border-cyber-border rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyber-neon transition" placeholder="e.g. 6pm - 8pm">
-                        </div>`;
+        let activeViewTracker = "auth"; 
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            setDisplayLoader(true);
+            await syncWithCloudDatabase();
+            window.history.replaceState({ activeView: "auth" }, "");
+            setDisplayLoader(false);
+            routeCurrentSessionState();
+        });
+
+        window.addEventListener('popstate', (event) => {
+            if (event.state && event.state.activeView) {
+                const prevView = event.state.activeView;
+                if (prevView === "auth") {
+                    session.authenticatedEmail = null; session.managementRole = null;
+                } else if (prevView === "portal") {
+                    document.getElementById('form-container').classList.add('hidden');
                 }
+                activeViewTracker = prevView;
+                routeCurrentSessionState(true);
+            } else {
+                goBackToMain();
             }
-            const formCont = document.getElementById('form-container');
-            if(formCont) formCont.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+
+        function pushViewToHistoryState(targetViewId) {
+            activeViewTracker = targetViewId;
+            window.history.pushState({ activeView: targetViewId }, "");
         }
 
-        function revealOptionalSecondSlot() {
-            const box = document.getElementById('optional-slot2-box');
-            const btn = document.getElementById('add-slot2-trigger-btn');
-            if(box) box.classList.remove('hidden');
-            if(btn) btn.classList.add('hidden');
+        function setDisplayLoader(show) {
+            const overlay = document.getElementById('loadingOverlay');
+            if (!overlay) return;
+            if (show) overlay.classList.remove('hidden');
+            else overlay.classList.add('hidden');
         }
-    </script>
 
-    <script>
-        // MAIN PARSING DATABASE LOGIC DRIVER
         async function syncWithCloudDatabase() {
             try {
+                // Completely safe separate queries to prevent schema changes from freezing execution logic
                 const resApps = await supabaseClient.from('applicants').select('*');
                 db.applicants = resApps.data || [];
 
@@ -701,18 +674,24 @@
                 const resLogs = await supabaseClient.from('logs').select('*');
                 db.logs = (resLogs.data || []).map(l => ({ timestamp: l.custom_timestamp || '', message: l.message || '', actor: l.actor || '' }));
 
-                const resAnnounce = await supabaseClient.from('announcements').select('*').order('id', { ascending: false });
+                const resAnnounce = await supabaseClient.from('announcements').select('*');
                 db.announcements = resAnnounce.data || [];
 
                 const resMsgs = await supabaseClient.from('staff_messages').select('*');
                 db.staffMessages = resMsgs.data || [];
 
-                const resResign = await supabaseClient.from('resignations').select('*').order('id', { ascending: false });
+                const resResign = await supabaseClient.from('resignations').select('*');
                 db.resignations = resResign.data || [];
 
             } catch (err) {
-                console.error("Database sync error", err);
+                console.error("Database sync caught error, entering crash fallback", err);
             }
+        }
+
+        function goBackToMain() {
+            session.authenticatedEmail = null; session.managementRole = null;
+            showToast("Returned safely to main node identity check.", "info");
+            pushViewToHistoryState("auth"); routeCurrentSessionState(true);
         }
 
         function routeCurrentSessionState(bypassHistoryPush = false) {
@@ -728,23 +707,19 @@
             const dRole = document.getElementById('user-display-role');
             const backNavBtn = document.getElementById('global-back-nav');
 
-            if (session.managementRole || session.authenticatedEmail) { if(backNavBtn) backNavBtn.classList.remove('hidden'); } else { if(backNavBtn) backNavBtn.classList.add('hidden'); }
+            if (session.managementRole || session.authenticatedEmail) { backNavBtn.classList.remove('hidden'); } else { backNavBtn.classList.add('hidden'); }
 
             if (session.managementRole) {
                 if(!bypassHistoryPush && activeViewTracker !== "dashboard") pushViewToHistoryState("dashboard");
-                if(profile) profile.classList.remove('hidden');
-                if(dName) dName.innerText = session.managementRole; 
-                if(dRole) dRole.innerText = session.managementRole;
+                profile.classList.remove('hidden');
+                dName.innerText = session.managementRole; dRole.innerText = session.managementRole;
                 document.getElementById('view-dashboard').classList.remove('hidden');
                 updateStats(); renderApplicants(); renderStaffTable(); renderSystemLogs(); renderAdminResignationsStream(); compileAndRenderPollMetrics();
                 return;
             }
 
             if (session.authenticatedEmail) {
-                if(profile) profile.classList.remove('hidden'); 
-                if(dName) dName.innerText = session.authenticatedEmail.split('@')[0]; 
-                if(dRole) dRole.innerText = 'Applicant';
-                
+                profile.classList.remove('hidden'); dName.innerText = session.authenticatedEmail.split('@')[0]; dRole.innerText = 'Applicant';
                 const record = db.applicants.find(a => a && a.email && String(a.email).trim().toLowerCase() === String(session.authenticatedEmail).trim().toLowerCase());
                 
                 if (!record) { 
@@ -790,7 +765,7 @@
                 return;
             }
             document.getElementById('view-auth').classList.remove('hidden');
-            if(profile) profile.classList.add('hidden');
+            profile.classList.add('hidden');
         }
 
         function compileAndRenderPollMetrics() {
@@ -834,49 +809,6 @@
             });
         }
 
-        async function handleAuthSubmit(e) {
-            e.preventDefault(); const email = document.getElementById('auth-email').value.trim();
-            if (!email.toLowerCase().endsWith('@gmail.com')) { showToast("Identity Error: Requires a valid @gmail.com address.", "error"); return; }
-            setDisplayLoader(true); session.authenticatedEmail = email;
-            await syncWithCloudDatabase(); showToast("Gmail Token linked.", "success"); setDisplayLoader(false); 
-            pushViewToHistoryState("portal"); routeCurrentSessionState(true);
-        }
-
-        async function handleFormSubmit(e) {
-            e.preventDefault(); const activeTimeInput = parseInt(document.getElementById('form-active-time').value);
-            if (activeTimeInput < 2) { showToast("Submission Rejected: Minimum 2 hours requirement error.", "error"); return; }
-            setDisplayLoader(true); const chosenExpectation = document.querySelector('input[name="expectation"]:checked').value;
-            
-            let compiledTimeString = "";
-            if (runtime_selectedPosition === 'Host') {
-                const s1 = document.getElementById('form-host-slot1').value.trim();
-                const s2Input = document.getElementById('form-host-slot2');
-                const s2 = s2Input ? s2Input.value.trim() : "";
-                compiledTimeString = s2 ? `Slot 1: ${s1} | Slot 2: ${s2}` : `Slot 1: ${s1}`;
-            } else if (runtime_selectedPosition === 'VC Moderator' || runtime_selectedPosition === 'Chat Moderator') {
-                compiledTimeString = document.getElementById('form-mod-time').value.trim();
-            } else {
-                compiledTimeString = document.getElementById('form-general-time').value.trim();
-            }
-
-            const newApp = {
-                email: session.authenticatedEmail, name: document.getElementById('form-name').value.trim(),
-                discordName: document.getElementById('form-discord-name').value.trim(), discordUsername: document.getElementById('form-discord-username').value.trim(),
-                whatsapp: document.getElementById('form-whatsapp').value.trim(), instagram: document.getElementById('form-instagram').value.trim(),
-                position: runtime_selectedPosition, age: parseInt(document.getElementById('form-age').value), experience: parseInt(document.getElementById('form-experience').value),
-                activeTime: activeTimeInput, calcTool: document.getElementById('form-calc-tool').value, extra: compiledTimeString,
-                expectation: chosenExpectation, status: 'Pending', isActive: true, is_trained: 'Untrained'
-            };
-
-            try {
-                await supabaseClient.from('applicants').delete().eq('email', session.authenticatedEmail);
-                const { error } = await supabaseClient.from('applicants').insert([newApp]); if (error) throw error;
-                await pushLog(`Application submitted by ${newApp.name} for position ${newApp.position}.`, 'APPLICANT');
-                await syncWithCloudDatabase(); showToast("Application successfully uploaded.", "success"); 
-            } catch(err) { showToast("Database tracking failure.", "error"); }
-            setDisplayLoader(false); pushViewToHistoryState("pending"); routeCurrentSessionState(true);
-        }
-
         async function submitStaffResignation(e) {
             e.preventDefault();
             const reasonInput = document.getElementById('resignation-reason');
@@ -891,7 +823,7 @@
             const timestamp = now.toISOString().replace('T', ' ').substring(0, 19);
 
             try {
-                await supabaseClient.from('resignations').insert([{ staff_id: record.id, discord_name: record.discordName || 'Staff', position: record.position || 'Track', reason: reasonText, notice_date: timestamp }]);
+                await supabaseClient.from('resignations').insert([{ staff_id: record.id, discord_name: record.discordName || 'Unknown', position: record.position || 'Track', reason: reasonText, notice_date: timestamp }]);
                 await pushLog(`Personnel "${record.discordName || 'Staff'}" submitted formal resignation exits notice pipeline.`, 'STAFF');
                 reasonInput.value = "";
                 showToast("Resignation packet transmitted safely under 5 days law rule buffer.", "warning");
@@ -904,73 +836,28 @@
         function renderAdminResignationsStream() {
             const container = document.getElementById('admin-resignations-stream');
             if(!container) return; container.innerHTML = "";
-            if(db.resignations.length === 0) { container.innerHTML = `<div class="p-6 bg-cyber-bg border border-cyber-border border-dashed text-center text-cyber-textMuted text-xs">No active resignation records stored.</div>`; return; }
+            if(db.resignations.length === 0) { container.innerHTML = `<div class="p-6 bg-cyber-bg border border-cyber-border border-dashed text-center text-cyber-textMuted text-xs">No exit filings or active resignations log arrays stored.</div>`; return; }
 
             db.resignations.forEach(r => {
-                const isHeadAdmin = session.managementRole === 'Head Operator';
-                const deleteBtnHtml = isHeadAdmin ? `<button onclick="purgeResignationEntry(${r.id})" class="px-2 py-0.5 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 text-[10px] font-bold uppercase rounded transition"><i class="fa-solid fa-trash-can mr-1"></i>Delete Entry</button>` : '';
-
                 container.innerHTML += `
-                    <div class="p-4 bg-cyber-card border border-rose-500/30 rounded-xl space-y-3 shadow-lg">
+                    <div class="p-4 bg-cyber-card border border-rose-500/30 rounded-xl space-y-2 shadow-lg">
                         <div class="flex justify-between items-center border-b border-cyber-border pb-1.5">
                             <div><strong class="text-white text-sm">@${escapeHtml(r.discord_name)}</strong> <span class="bg-cyber-bg border border-cyber-border text-cyber-neon px-2 py-0.2 rounded text-[10px] uppercase ml-1.5">${escapeHtml(r.position)}</span></div>
                             <span class="text-[10px] text-slate-500 font-mono">Notified: ${r.notice_date}</span>
                         </div>
-                        <p class="text-slate-300 leading-relaxed"><span class="text-rose-400 font-semibold block text-[11px] uppercase">Declared Exit Reason:</span> "${escapeHtml(r.reason)}"</p>
-                        <div class="flex items-center space-x-2 pt-1 border-t border-cyber-border/40">
-                            <button onclick="approveResignationProcess('${escapeHtml(r.discord_name)}', ${r.id})" class="px-2 py-0.5 bg-emerald-500/10 hover:bg-emerald-500 text-cyber-neon hover:text-black border border-cyber-neon/20 text-[10px] font-bold uppercase rounded transition"><i class="fa-solid fa-check mr-1"></i>Approve Resignation</button>
-                            ${deleteBtnHtml}
-                        </div>
+                        <p class="text-slate-300 leading-relaxed pt-0.5"><span class="text-rose-400 font-semibold block text-[11px] uppercase">Declared Exit Reason:</span> "${escapeHtml(r.reason)}"</p>
                     </div>`;
             });
-        }
-
-        async function approveResignationProcess(dName, recordId) {
-            if(!confirm(`Confirm approval for @${dName}'s resignation deployment?`)) return;
-            setDisplayLoader(true);
-            try {
-                const targetStaff = db.applicants.find(a => a && a.discordName === dName);
-                if (targetStaff) {
-                    await supabaseClient.from('applicants').update({ status: 'Rejected' }).eq('id', targetStaff.id);
-                }
-                await supabaseClient.from('resignations').delete().eq('id', recordId);
-                await pushLog(`Resignation profile for @${dName} processed and approved.`, session.managementRole);
-                await syncWithCloudDatabase();
-                renderAdminResignationsStream();
-                showToast("Resignation packet processed successfully.", "success");
-            } catch(e) { showToast("Failed to write approval matrix.", "error"); }
-            setDisplayLoader(false);
-        }
-
-        async function purgeResignationEntry(recordId) {
-            if(!confirm("Explicit purge directive: Clear this exit entry permanently from database?")) return;
-            setDisplayLoader(true);
-            try {
-                await supabaseClient.from('resignations').delete().eq('id', recordId);
-                await pushLog(`Safely purged resignation table record row instance ID: [${recordId}].`, 'Head Operator');
-                await syncWithCloudDatabase();
-                renderAdminResignationsStream();
-                showToast("Resignation log packet purged.", "info");
-            } catch(e) { showToast("Purge request dropped.", "error"); }
-            setDisplayLoader(false);
         }
 
         function renderStaffAnnouncements() {
             const container = document.getElementById('staff-announcements-box'); if(!container) return; container.innerHTML = "";
             if(db.announcements.length === 0) { container.innerHTML = `<p class="text-cyber-textMuted">No broadcasts posted yet.</p>`; return; }
-            
             db.announcements.forEach(a => {
-                const photoHtml = a.instagram && String(a.instagram).trim() ? `<div class="mt-2.5 max-w-full rounded-xl overflow-hidden border border-cyber-border bg-black/40"><img src="${escapeHtml(a.instagram)}" class="max-h-64 object-contain mx-auto w-auto" alt="Broadcast Asset" onerror="this.style.display='none'"></div>` : '';
-                const deleteActionBtn = (session.managementRole === 'Head Operator' || session.managementRole === 'Operator') ? `<button onclick="purgeSystemAnnouncement(${a.id})" class="text-rose-400 hover:text-rose-500 font-bold uppercase text-[9px] tracking-wider"><i class="fa-solid fa-trash-can mr-1"></i>Delete</button>` : '';
-
                 container.innerHTML += `
-                    <div class="bg-cyber-card p-3.5 rounded-xl border border-cyber-border space-y-1">
-                        <div class="flex justify-between items-center mb-1">
-                            <div><strong class="text-white font-bold">${escapeHtml(a.title)}</strong><span class="text-[10px] text-cyber-neon font-mono ml-2">@${a.author}</span></div>
-                            ${deleteActionBtn}
-                        </div>
-                        <p class="text-slate-300 leading-relaxed break-words">${escapeHtml(a.content)}</p>
-                        ${photoHtml}
+                    <div class="bg-cyber-card p-3 rounded-xl border border-cyber-border">
+                        <div class="flex justify-between items-center mb-1"><strong class="text-white font-bold">${escapeHtml(a.title)}</strong><span class="text-[10px] text-cyber-neon font-mono">@${a.author}</span></div>
+                        <p class="text-slate-300">${escapeHtml(a.content)}</p>
                     </div>`;
             });
         }
@@ -978,33 +865,16 @@
         async function postAnnouncement(e) {
             e.preventDefault(); setDisplayLoader(true);
             const title = document.getElementById('announce-title').value.trim();
-            const photoUrl = document.getElementById('announce-photo').value.trim();
             const content = document.getElementById('announce-content').value.trim();
             const author = session.managementRole;
 
             try {
-                await supabaseClient.from('announcements').insert([{ title, content, author, instagram: photoUrl }]);
-                await pushLog(`New dynamic core broadcast published: "${title}"`, author);
+                await supabaseClient.from('announcements').insert([{ title, content, author }]);
+                await pushLog(`New core broadcast posted: "${title}"`, author);
                 await syncWithCloudDatabase();
-                document.getElementById('announce-title').value = ""; 
-                document.getElementById('announce-photo').value = ""; 
-                document.getElementById('announce-content').value = "";
-                showToast("Announcement published successfully!", "success");
-                renderStaffAnnouncements();
-            } catch(err) { showToast("Broadcast initialization fail.", "error"); }
-            setDisplayLoader(false);
-        }
-
-        async function purgeSystemAnnouncement(announceId) {
-            if(!confirm("Are you sure you want to clear this broadcast message framework completely?")) return;
-            setDisplayLoader(true);
-            try {
-                await supabaseClient.from('announcements').delete().eq('id', announceId);
-                await pushLog(`Deleted active announcement database node record instance row: [${announceId}].`, session.managementRole);
-                await syncWithCloudDatabase();
-                renderStaffAnnouncements();
-                showToast("Broadcast message safely erased.", "info");
-            } catch(e) { showToast("Failed to clean node.", "error"); }
+                document.getElementById('announce-title').value = ""; document.getElementById('announce-content').value = "";
+                showToast("Announcement live Broadcasted!", "success");
+            } catch(err) { showToast("Broadcast protocol fail.", "error"); }
             setDisplayLoader(false);
         }
 
@@ -1056,7 +926,7 @@
             const container = document.getElementById('admin-chat-modal'); if(!container || container.classList.contains('hidden')) return;
             const stream = document.getElementById('admin-chat-stream'); if(!stream) return; stream.innerHTML = "";
             const filtered = db.staffMessages.filter(m => m && m.staff_id == activeAdminChatStaffId);
-            if(filtered.length === 0) { stream.innerHTML = `<p class="text-cyber-textMuted text-center py-4">No chat data log files synced inside this shell index.</p>`; return; }
+            if(filtered.length === 0) { stream.innerHTML = `<p class="text-cyber-textMuted text-center py-4">No data logs logged inside this index shell.</p>`; return; }
             filtered.forEach(m => {
                 const isAdmin = m.sender_role !== 'STAFF'; const textCol = isAdmin ? "text-sky-400" : "text-cyber-neon";
                 stream.innerHTML += `<div><span class="text-[10px] text-slate-500">[${m.sender_name}]</span> <p class="inline-block ml-1 ${textCol}">${escapeHtml(m.message_text)}</p></div>`;
@@ -1133,6 +1003,68 @@
             }
         }
 
+        async function handleAuthSubmit(e) {
+            e.preventDefault(); const email = document.getElementById('auth-email').value.trim();
+            if (!email.toLowerCase().endsWith('@gmail.com')) { showToast("Identity Error: Requires a valid @gmail.com address.", "error"); return; }
+            setDisplayLoader(true); session.authenticatedEmail = email;
+            await syncWithCloudDatabase(); showToast("Gmail Token linked.", "success"); setDisplayLoader(false); 
+            pushViewToHistoryState("portal"); routeCurrentSessionState(true);
+        }
+
+        function selectPosition(position) {
+            runtime_selectedPosition = position;
+            document.querySelectorAll('.position-card').forEach(card => { card.classList.remove('border-cyber-neon', 'bg-cyber-neon/5'); card.classList.add('border-cyber-border'); });
+            const cardId = `card-${position.replace(' ', '-')}`; const activeCard = document.getElementById(cardId);
+            if(activeCard) { activeCard.classList.remove('border-cyber-border'); activeCard.classList.add('border-cyber-neon', 'bg-cyber-neon/5'); }
+            document.getElementById('form-container').classList.remove('hidden'); document.getElementById('selected-role-badge').innerText = position; document.getElementById('form-position').value = position;
+            
+            const calcToolBox = document.getElementById('pt-calculation-tool-box');
+            if(position === 'PT Maker') {
+                if(calcToolBox) calcToolBox.classList.remove('hidden'); document.getElementById('form-calc-tool').required = true;
+            } else {
+                if(calcToolBox) calcToolBox.classList.add('hidden'); document.getElementById('form-calc-tool').required = false; document.getElementById('form-calc-tool').value = "None / Unassigned Profile";
+            }
+
+            const dynamicArea = document.getElementById('dynamic-field');
+            if(dynamicArea) {
+                dynamicArea.innerHTML = `
+                    <div class="bg-cyber-card/40 border border-cyber-border/60 p-4 rounded-xl space-y-3">
+                        <label class="block text-xs font-bold text-cyber-neon uppercase tracking-wider">PREFERRED HOSTING TIME ARRAY <span class="text-rose-500">* (MINIMUM 2 HOURS BLOCK)</span></label>
+                        <input type="text" required id="form-extra" class="w-full bg-cyber-card border border-cyber-border rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyber-neon transition" placeholder="e.g. 7 PM to 9 PM or Night shifts 10 PM - 12 AM">
+                    </div>`;
+            }
+            const formCont = document.getElementById('form-container');
+            if(formCont) formCont.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        async function handleFormSubmit(e) {
+            e.preventDefault(); const activeTimeInput = parseInt(document.getElementById('form-active-time').value);
+            if (activeTimeInput < 2) { showToast("Submission Rejected: Minimum 2 hours requirement error.", "error"); return; }
+            setDisplayLoader(true); const chosenExpectation = document.querySelector('input[name="expectation"]:checked').value;
+            
+            const newApp = {
+                email: session.authenticatedEmail, name: document.getElementById('form-name').value.trim(),
+                discordName: document.getElementById('form-discord-name').value.trim(), discordUsername: document.getElementById('form-discord-username').value.trim(),
+                whatsapp: document.getElementById('form-whatsapp').value.trim(), instagram: document.getElementById('form-instagram').value.trim(),
+                position: runtime_selectedPosition, age: parseInt(document.getElementById('form-age').value), experience: parseInt(document.getElementById('form-experience').value),
+                activeTime: activeTimeInput, calcTool: document.getElementById('form-calc-tool').value, extra: document.getElementById('form-extra').value.trim(),
+                expectation: chosenExpectation, status: 'Pending', isActive: true, is_trained: 'Untrained'
+            };
+
+            try {
+                await supabaseClient.from('applicants').delete().eq('email', session.authenticatedEmail);
+                const { error } = await supabaseClient.from('applicants').insert([newApp]); if (error) throw error;
+                await pushLog(`Application submitted by ${newApp.name} for position ${newApp.position}.`, 'APPLICANT');
+                await syncWithCloudDatabase(); showToast("Application successfully uploaded.", "success"); 
+            } catch(err) { showToast("Database tracking failure.", "error"); }
+            setDisplayLoader(false); pushViewToHistoryState("pending"); routeCurrentSessionState(true);
+        }
+
+        function openStaffGateway() { 
+            document.getElementById('view-auth').classList.add('hidden'); document.getElementById('view-login').classList.remove('hidden'); document.getElementById('global-back-nav').classList.remove('hidden'); 
+            pushViewToHistoryState("login");
+        }
+
         async function handleLogin(event) {
             event.preventDefault(); const role = document.getElementById('login-role').value; const password = document.getElementById('login-password').value;
             if((role === 'Head Operator' && password === 'head_admin#rc99') || (role === 'Operator' && password === 'operator_clearance@77')) {
@@ -1140,6 +1072,31 @@
                 await syncWithCloudDatabase(); await pushLog(`Administrative session token verified successfully.`, role); setDisplayLoader(false); 
                 pushViewToHistoryState("dashboard"); routeCurrentSessionState(true);
             } else { document.getElementById('login-error').classList.remove('hidden'); }
+        }
+
+        function logout() {
+            if (session.managementRole) { pushLog(`Administrative terminal node released safely.`, session.managementRole); }
+            session.authenticatedEmail = null; session.managementRole = null; showToast("Logged out successfully.", "info");
+            pushViewToHistoryState("auth"); routeCurrentSessionState(true);
+        }
+
+        async function pushLog(message, actor) {
+            const now = new Date(); const timestamp = now.toISOString().replace('T', ' ').substring(0, 19);
+            try { await supabaseClient.from('logs').insert([{ custom_timestamp: timestamp, message, actor }]); } catch(e) {}
+            db.logs.unshift({ timestamp, message, actor });
+        }
+
+        function updateStats() {
+            const pending = db.applicants.filter(a => a && a.status === 'Pending').length;
+            const approved = db.applicants.filter(a => a && a.status === 'Approved').length;
+            const rejected = db.applicants.filter(a => a && a.status === 'Rejected').length;
+            let totalWarnings = 0; const approvedNames = db.applicants.filter(a => a && a.status === 'Approved').map(a => a.discordName);
+            approvedNames.forEach(dName => { if(dName) totalWarnings += (db.warnings[dName] || 0); });
+            
+            const pEl = document.getElementById('stat-pending'); if(pEl) pEl.innerText = pending;
+            const aEl = document.getElementById('stat-approved'); if(aEl) aEl.innerText = approved;
+            const rEl = document.getElementById('stat-rejected'); if(rEl) rEl.innerText = rejected;
+            const wEl = document.getElementById('stat-warnings'); if(wEl) wEl.innerText = totalWarnings;
         }
 
         async function updateStatus(id, newStatus) {
@@ -1232,6 +1189,7 @@
             const modal = document.getElementById('info-modal');
             if(modal) modal.classList.remove('hidden');
         }
+        function closeInfoModal() { document.getElementById('info-modal').classList.add('hidden'); }
 
         function switchDashTab(tabName) {
             document.getElementById('dash-tab-applicants').classList.add('hidden'); document.getElementById('dash-tab-staff').classList.add('hidden'); document.getElementById('dash-tab-logs').classList.add('hidden'); document.getElementById('dash-tab-announcements').classList.add('hidden'); document.getElementById('dash-tab-resignations').classList.add('hidden'); document.getElementById('dash-tab-pollMetrics').classList.add('hidden');
@@ -1248,12 +1206,10 @@
                 document.getElementById('dash-tab-staff').classList.remove('hidden'); document.getElementById('tab-staff-btn').className = "flex-shrink-0 border-b-2 border-cyber-neon text-white text-sm font-bold pb-3 flex items-center px-1";
             } else if (tabName === 'announcements') {
                 document.getElementById('dash-tab-announcements').classList.remove('hidden'); document.getElementById('tab-announce-btn').className = "flex-shrink-0 border-b-2 border-cyber-neon text-white text-sm font-bold pb-3 flex items-center px-1";
-                renderStaffAnnouncements();
             } else if (tabName === 'logs') {
                 document.getElementById('dash-tab-logs').classList.remove('hidden'); document.getElementById('tab-logs-btn').className = "flex-shrink-0 border-b-2 border-cyber-neon text-white text-sm font-bold pb-3 flex items-center px-1";
             } else if (tabName === 'resignations') {
                 document.getElementById('dash-tab-resignations').classList.remove('hidden'); document.getElementById('tab-resign-btn').className = "flex-shrink-0 border-b-2 border-cyber-neon text-white text-sm font-bold pb-3 flex items-center px-1";
-                renderAdminResignationsStream();
             } else if (tabName === 'pollMetrics') {
                 document.getElementById('dash-tab-pollMetrics').classList.remove('hidden'); document.getElementById('tab-poll-btn').className = "flex-shrink-0 border-b-2 border-cyber-neon text-white text-sm font-bold pb-3 flex items-center px-1";
                 compileAndRenderPollMetrics();
@@ -1336,6 +1292,28 @@
                     </tr>`;
             });
         }
+
+        function renderSystemLogs() {
+            const stream = document.getElementById('logs-terminal-stream'); if(!stream) return; stream.innerHTML = "";
+            db.logs.forEach(log => {
+                stream.innerHTML += `<div class="py-1 border-b border-cyber-border/20 px-2"><span class="text-slate-600">[${escapeHtml(log.timestamp)}]</span> <span class="text-amber-400 font-bold uppercase">[${escapeHtml(log.actor)}]</span> <span class="text-slate-300 ml-1">${escapeHtml(log.message)}</span></div>`;
+            });
+        }
+
+        async function clearSystemLogs() {
+            db.logs = []; await supabaseClient.from('logs').delete().neq('actor', 'SYSTEM'); renderSystemLogs();
+        }
+
+        function showToast(msg, type = "success") {
+            const toast = document.getElementById('toast'); const icon = document.getElementById('toast-icon'); const msgEl = document.getElementById('toast-msg');
+            if(!toast) return; msgEl.innerText = msg; icon.className = type === 'success' ? "fa-solid fa-circle-check text-cyber-neon text-lg" : "fa-solid fa-circle-xmark text-rose-500 text-lg";
+            toast.classList.remove('translate-y-20', 'opacity-0'); setTimeout(() => { toast.classList.add('translate-y-20', 'opacity-0'); }, 4000);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
     </script>
 </body>
-</html>
+    </html>
