@@ -614,201 +614,21 @@
     </div>
 
     <script>
-        const SUPABASE_URL = "https://ippxcvcouyjohcxppllm.supabase.co";
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlwcHhjdmNvdXlqb2hjeHBwbGxtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NDczMDAsImV4cCI6MjA5NzUyMzMwMH0.tWJIoV0ZflTFSX-qHlbvi-vIAzsS78hQ52rpyaX-14U";
-        
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-        let db = { applicants: [], warnings: {}, logs: [], announcements: [], staffMessages: [], resignations: [] };
-        let session = { authenticatedEmail: null, managementRole: null };
-        let runtime_selectedPosition = null;
-        let activeAdminChatStaffId = null;
-
-        let activeViewTracker = "auth"; 
-
-        window.addEventListener('DOMContentLoaded', async () => {
-            setDisplayLoader(true);
-            await syncWithCloudDatabase();
-            window.history.replaceState({ activeView: "auth" }, "");
-            setDisplayLoader(false);
-            routeCurrentSessionState();
-        });
-
-        window.addEventListener('popstate', (event) => {
-            if (event.state && event.state.activeView) {
-                const prevView = event.state.activeView;
-                if (prevView === "auth") {
-                    session.authenticatedEmail = null; session.managementRole = null;
-                } else if (prevView === "portal") {
-                    document.getElementById('form-container').classList.add('hidden');
-                }
-                activeViewTracker = prevView;
-                routeCurrentSessionState(true);
-            } else {
-                goBackToMain();
-            }
-        });
-
-        function pushViewToHistoryState(targetViewId) {
-            activeViewTracker = targetViewId;
-            window.history.pushState({ activeView: targetViewId }, "");
+        // GLOBAL TOAST FRAME INJECTED EARLY TO PREVENT UNHANDLED PROMISE REJECTIONS
+        function showToast(msg, type = "success") {
+            const toast = document.getElementById('toast'); 
+            const icon = document.getElementById('toast-icon'); 
+            const msgEl = document.getElementById('toast-msg');
+            if(!toast || !msgEl || !icon) return; 
+            msgEl.innerText = msg; 
+            icon.className = type === 'success' ? "fa-solid fa-circle-check text-cyber-neon text-lg" : "fa-solid fa-circle-xmark text-rose-500 text-lg";
+            toast.classList.remove('translate-y-20', 'opacity-0'); 
+            setTimeout(() => { toast.classList.add('translate-y-20', 'opacity-0'); }, 4000);
         }
+    </script>
 
-        function setDisplayLoader(show) {
-            const overlay = document.getElementById('loadingOverlay');
-            if (!overlay) return;
-            if (show) overlay.classList.remove('hidden');
-            else overlay.classList.add('hidden');
-        }
-
-        async function syncWithCloudDatabase() {
-            try {
-                const resApps = await supabaseClient.from('applicants').select('*');
-                db.applicants = resApps.data || [];
-
-                const resWarns = await supabaseClient.from('warnings').select('*');
-                db.warnings = {};
-                if (resWarns.data) { resWarns.data.forEach(w => { if(w.discord_name) db.warnings[w.discord_name] = w.count; }); }
-
-                const resLogs = await supabaseClient.from('logs').select('*');
-                db.logs = (resLogs.data || []).map(l => ({ timestamp: l.custom_timestamp || '', message: l.message || '', actor: l.actor || '' }));
-
-                const resAnnounce = await supabaseClient.from('announcements').select('*').order('id', { ascending: false });
-                db.announcements = resAnnounce.data || [];
-
-                const resMsgs = await supabaseClient.from('staff_messages').select('*');
-                db.staffMessages = resMsgs.data || [];
-
-                const resResign = await supabaseClient.from('resignations').select('*').order('id', { ascending: false });
-                db.resignations = resResign.data || [];
-
-            } catch (err) {
-                console.error("Database sync caught error", err);
-            }
-        }
-
-        function goBackToMain() {
-            session.authenticatedEmail = null; session.managementRole = null;
-            showToast("Returned safely to main node identity check.", "info");
-            pushViewToHistoryState("auth"); routeCurrentSessionState(true);
-        }
-
-        function routeCurrentSessionState(bypassHistoryPush = false) {
-            document.getElementById('view-auth').classList.add('hidden');
-            document.getElementById('view-portal').classList.add('hidden');
-            document.getElementById('view-pending').classList.add('hidden');
-            document.getElementById('view-approved').classList.add('hidden');
-            document.getElementById('view-login').classList.add('hidden');
-            document.getElementById('view-dashboard').classList.add('hidden');
-
-            const profile = document.getElementById('nav-profile');
-            const dName = document.getElementById('user-display-name');
-            const dRole = document.getElementById('user-display-role');
-            const backNavBtn = document.getElementById('global-back-nav');
-
-            if (session.managementRole || session.authenticatedEmail) { backNavBtn.classList.remove('hidden'); } else { backNavBtn.classList.add('hidden'); }
-
-            if (session.managementRole) {
-                if(!bypassHistoryPush && activeViewTracker !== "dashboard") pushViewToHistoryState("dashboard");
-                profile.classList.remove('hidden');
-                dName.innerText = session.managementRole; dRole.innerText = session.managementRole;
-                document.getElementById('view-dashboard').classList.remove('hidden');
-                updateStats(); renderApplicants(); renderStaffTable(); renderSystemLogs(); renderAdminResignationsStream(); compileAndRenderPollMetrics();
-                return;
-            }
-
-            if (session.authenticatedEmail) {
-                profile.classList.remove('hidden'); dName.innerText = session.authenticatedEmail.split('@')[0]; dRole.innerText = 'Applicant';
-                const record = db.applicants.find(a => a && a.email && String(a.email).trim().toLowerCase() === String(session.authenticatedEmail).trim().toLowerCase());
-                
-                if (!record) { 
-                    if(!bypassHistoryPush && activeViewTracker !== "portal") pushViewToHistoryState("portal");
-                    document.getElementById('view-portal').classList.remove('hidden'); 
-                } else if (record.status === 'Pending') {
-                    if(!bypassHistoryPush && activeViewTracker !== "pending") pushViewToHistoryState("pending");
-                    document.getElementById('view-pending').classList.remove('hidden');
-                } else if (record.status === 'Approved') {
-                    if(!bypassHistoryPush && activeViewTracker !== "approved") pushViewToHistoryState("approved");
-                    document.getElementById('employee-profile-name').innerText = record.discordName || 'Staff Member';
-                    document.getElementById('employee-profile-email').innerText = record.email || '';
-                    document.getElementById('employee-profile-position').innerText = record.position || 'Moderator Track';
-                    document.getElementById('employee-profile-wa').innerText = record.whatsapp || '--';
-                    document.getElementById('employee-profile-tool').innerText = record.calcTool || 'None';
-                    document.getElementById('employee-profile-time').innerText = record.extra || '--';
-                    
-                    document.getElementById('leave-from').value = record.leaveFrom || '';
-                    document.getElementById('leave-to').value = record.leaveTo || '';
-                    
-                    const strikeCount = db.warnings[record.discordName] || 0;
-                    document.getElementById('employee-strike-count').innerText = `${strikeCount} / 3 Strikes`;
-                    
-                    const trainingBadge = document.getElementById('employee-training-badge');
-                    if(trainingBadge) {
-                        const isTrainedState = record.is_trained || 'Untrained';
-                        if (isTrainedState === 'Trained') {
-                            trainingBadge.className = "ml-2 bg-emerald-500/10 text-cyber-neon border border-cyber-neon/30 text-[9px] uppercase px-1.5 py-0.2 rounded font-black tracking-widest flex items-center";
-                            trainingBadge.innerHTML = `<i class="fa-solid fa-graduation-cap mr-1"></i> Trained Asset`;
-                        } else {
-                            trainingBadge.className = "ml-2 bg-amber-500/10 text-amber-500 border border-amber-500/30 text-[9px] uppercase px-1.5 py-0.2 rounded font-black tracking-widest flex items-center animate-pulse";
-                            trainingBadge.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> Untrained Profile`;
-                        }
-                    }
-                    
-                    document.getElementById('view-approved').classList.remove('hidden');
-                    
-                    updateStaffWorkspaceButtons(); renderStaffAnnouncements(); renderStaffChatStream(record.id); renderStaffDirectory();
-                } else {
-                    if(!bypassHistoryPush && activeViewTracker !== "portal") pushViewToHistoryState("portal");
-                    document.getElementById('view-portal').classList.remove('hidden');
-                }
-                return;
-            }
-            document.getElementById('view-auth').classList.remove('hidden');
-            profile.classList.add('hidden');
-        }
-
-        function compileAndRenderPollMetrics() {
-            const container = document.getElementById('live-poll-charts-grid');
-            if(!container) return;
-
-            const activeStaffList = db.applicants.filter(a => a && a.status === 'Approved');
-
-            let pollMap = {
-                "IN REAL PRIZES [related to esports]": [],
-                "NITRO ID'S": [],
-                "REAL CASH": [],
-                "WORK EXPERIENCE": []
-            };
-
-            activeStaffList.forEach(staff => {
-                const choice = staff.expectation;
-                if(pollMap[choice] !== undefined) {
-                    pollMap[choice].push(staff.discordName || staff.name || 'Anonymous');
-                }
-            });
-
-            container.innerHTML = "";
-
-            Object.keys(pollMap).forEach(key => {
-                const votersArray = pollMap[key];
-                const totalVotesCount = votersArray.length;
-                let votersString = totalVotesCount > 0 ? votersArray.map(name => `@${name}`).join(', ') : 'No votes inside segment shell';
-
-                container.innerHTML += `
-                    <div class="bg-cyber-card border border-cyber-border p-5 rounded-2xl relative shadow-md">
-                        <div class="flex justify-between items-start mb-3">
-                            <h4 class="text-xs font-bold font-mono text-white tracking-wide uppercase max-w-[75%] leading-relaxed">${key}</h4>
-                            <span class="bg-cyber-neon/10 text-cyber-neon border border-cyber-neon/30 text-xs font-bold font-mono px-2.5 py-1 rounded-xl shadow-inner">${totalVotesCount} Personnel</span>
-                        </div>
-                        <div class="bg-cyber-surface/60 border border-cyber-border/40 p-3 rounded-xl text-[11px]">
-                            <span class="text-cyber-textMuted uppercase font-bold text-[9px] tracking-wider block mb-1"><i class="fa-solid fa-users text-cyber-neon mr-1"></i> Selection Footprints:</span>
-                            <p class="text-slate-300 break-words leading-relaxed">${escapeHtml(votersString)}</p>
-                        </div>
-                    </div>`;
-            });
-        }
-
-        // RESPONSIBLY ADJUST FORMS BASED ON THE USER ROLE ASSIGNED
+    <script>
+        // MAIN ROUTING PARSING MATRIX
         function selectPosition(position) {
             runtime_selectedPosition = position;
             document.querySelectorAll('.position-card').forEach(card => { card.classList.remove('border-cyber-neon', 'bg-cyber-neon/5'); card.classList.add('border-cyber-border'); });
@@ -864,6 +684,162 @@
             const btn = document.getElementById('add-slot2-trigger-btn');
             if(box) box.classList.remove('hidden');
             if(btn) btn.classList.add('hidden');
+        }
+    </script>
+
+    <script>
+        // MAIN PARSING DATABASE LOGIC DRIVER
+        async function syncWithCloudDatabase() {
+            try {
+                const resApps = await supabaseClient.from('applicants').select('*');
+                db.applicants = resApps.data || [];
+
+                const resWarns = await supabaseClient.from('warnings').select('*');
+                db.warnings = {};
+                if (resWarns.data) { resWarns.data.forEach(w => { if(w.discord_name) db.warnings[w.discord_name] = w.count; }); }
+
+                const resLogs = await supabaseClient.from('logs').select('*');
+                db.logs = (resLogs.data || []).map(l => ({ timestamp: l.custom_timestamp || '', message: l.message || '', actor: l.actor || '' }));
+
+                const resAnnounce = await supabaseClient.from('announcements').select('*').order('id', { ascending: false });
+                db.announcements = resAnnounce.data || [];
+
+                const resMsgs = await supabaseClient.from('staff_messages').select('*');
+                db.staffMessages = resMsgs.data || [];
+
+                const resResign = await supabaseClient.from('resignations').select('*').order('id', { ascending: false });
+                db.resignations = resResign.data || [];
+
+            } catch (err) {
+                console.error("Database sync error", err);
+            }
+        }
+
+        function routeCurrentSessionState(bypassHistoryPush = false) {
+            document.getElementById('view-auth').classList.add('hidden');
+            document.getElementById('view-portal').classList.add('hidden');
+            document.getElementById('view-pending').classList.add('hidden');
+            document.getElementById('view-approved').classList.add('hidden');
+            document.getElementById('view-login').classList.add('hidden');
+            document.getElementById('view-dashboard').classList.add('hidden');
+
+            const profile = document.getElementById('nav-profile');
+            const dName = document.getElementById('user-display-name');
+            const dRole = document.getElementById('user-display-role');
+            const backNavBtn = document.getElementById('global-back-nav');
+
+            if (session.managementRole || session.authenticatedEmail) { if(backNavBtn) backNavBtn.classList.remove('hidden'); } else { if(backNavBtn) backNavBtn.classList.add('hidden'); }
+
+            if (session.managementRole) {
+                if(!bypassHistoryPush && activeViewTracker !== "dashboard") pushViewToHistoryState("dashboard");
+                if(profile) profile.classList.remove('hidden');
+                if(dName) dName.innerText = session.managementRole; 
+                if(dRole) dRole.innerText = session.managementRole;
+                document.getElementById('view-dashboard').classList.remove('hidden');
+                updateStats(); renderApplicants(); renderStaffTable(); renderSystemLogs(); renderAdminResignationsStream(); compileAndRenderPollMetrics();
+                return;
+            }
+
+            if (session.authenticatedEmail) {
+                if(profile) profile.classList.remove('hidden'); 
+                if(dName) dName.innerText = session.authenticatedEmail.split('@')[0]; 
+                if(dRole) dRole.innerText = 'Applicant';
+                
+                const record = db.applicants.find(a => a && a.email && String(a.email).trim().toLowerCase() === String(session.authenticatedEmail).trim().toLowerCase());
+                
+                if (!record) { 
+                    if(!bypassHistoryPush && activeViewTracker !== "portal") pushViewToHistoryState("portal");
+                    document.getElementById('view-portal').classList.remove('hidden'); 
+                } else if (record.status === 'Pending') {
+                    if(!bypassHistoryPush && activeViewTracker !== "pending") pushViewToHistoryState("pending");
+                    document.getElementById('view-pending').classList.remove('hidden');
+                } else if (record.status === 'Approved') {
+                    if(!bypassHistoryPush && activeViewTracker !== "approved") pushViewToHistoryState("approved");
+                    document.getElementById('employee-profile-name').innerText = record.discordName || 'Staff Member';
+                    document.getElementById('employee-profile-email').innerText = record.email || '';
+                    document.getElementById('employee-profile-position').innerText = record.position || 'Moderator Track';
+                    document.getElementById('employee-profile-wa').innerText = record.whatsapp || '--';
+                    document.getElementById('employee-profile-tool').innerText = record.calcTool || 'None';
+                    document.getElementById('employee-profile-time').innerText = record.extra || '--';
+                    
+                    document.getElementById('leave-from').value = record.leaveFrom || '';
+                    document.getElementById('leave-to').value = record.leaveTo || '';
+                    
+                    const strikeCount = db.warnings[record.discordName] || 0;
+                    document.getElementById('employee-strike-count').innerText = `${strikeCount} / 3 Strikes`;
+                    
+                    const trainingBadge = document.getElementById('employee-training-badge');
+                    if(trainingBadge) {
+                        const isTrainedState = record.is_trained || 'Untrained';
+                        if (isTrainedState === 'Trained') {
+                            trainingBadge.className = "ml-2 bg-emerald-500/10 text-cyber-neon border border-cyber-neon/30 text-[9px] uppercase px-1.5 py-0.2 rounded font-black tracking-widest flex items-center";
+                            trainingBadge.innerHTML = `<i class="fa-solid fa-graduation-cap mr-1"></i> Trained Asset`;
+                        } else {
+                            trainingBadge.className = "ml-2 bg-amber-500/10 text-amber-500 border border-amber-500/30 text-[9px] uppercase px-1.5 py-0.2 rounded font-black tracking-widest flex items-center animate-pulse";
+                            trainingBadge.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> Untrained Profile`;
+                        }
+                    }
+                    
+                    document.getElementById('view-approved').classList.remove('hidden');
+                    
+                    updateStaffWorkspaceButtons(); renderStaffAnnouncements(); renderStaffChatStream(record.id); renderStaffDirectory();
+                } else {
+                    if(!bypassHistoryPush && activeViewTracker !== "portal") pushViewToHistoryState("portal");
+                    document.getElementById('view-portal').classList.remove('hidden');
+                }
+                return;
+            }
+            document.getElementById('view-auth').classList.remove('hidden');
+            if(profile) profile.classList.add('hidden');
+        }
+
+        function compileAndRenderPollMetrics() {
+            const container = document.getElementById('live-poll-charts-grid');
+            if(!container) return;
+
+            const activeStaffList = db.applicants.filter(a => a && a.status === 'Approved');
+
+            let pollMap = {
+                "IN REAL PRIZES [related to esports]": [],
+                "NITRO ID'S": [],
+                "REAL CASH": [],
+                "WORK EXPERIENCE": []
+            };
+
+            activeStaffList.forEach(staff => {
+                const choice = staff.expectation;
+                if(pollMap[choice] !== undefined) {
+                    pollMap[choice].push(staff.discordName || staff.name || 'Anonymous');
+                }
+            });
+
+            container.innerHTML = "";
+
+            Object.keys(pollMap).forEach(key => {
+                const votersArray = pollMap[key];
+                const totalVotesCount = votersArray.length;
+                let votersString = totalVotesCount > 0 ? votersArray.map(name => `@${name}`).join(', ') : 'No votes inside segment shell';
+
+                container.innerHTML += `
+                    <div class="bg-cyber-card border border-cyber-border p-5 rounded-2xl relative shadow-md">
+                        <div class="flex justify-between items-start mb-3">
+                            <h4 class="text-xs font-bold font-mono text-white tracking-wide uppercase max-w-[75%] leading-relaxed">${key}</h4>
+                            <span class="bg-cyber-neon/10 text-cyber-neon border border-cyber-neon/30 text-xs font-bold font-mono px-2.5 py-1 rounded-xl shadow-inner">${totalVotesCount} Personnel</span>
+                        </div>
+                        <div class="bg-cyber-surface/60 border border-cyber-border/40 p-3 rounded-xl text-[11px]">
+                            <span class="text-cyber-textMuted uppercase font-bold text-[9px] tracking-wider block mb-1"><i class="fa-solid fa-users text-cyber-neon mr-1"></i> Selection Footprints:</span>
+                            <p class="text-slate-300 break-words leading-relaxed">${escapeHtml(votersString)}</p>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        async function handleAuthSubmit(e) {
+            e.preventDefault(); const email = document.getElementById('auth-email').value.trim();
+            if (!email.toLowerCase().endsWith('@gmail.com')) { showToast("Identity Error: Requires a valid @gmail.com address.", "error"); return; }
+            setDisplayLoader(true); session.authenticatedEmail = email;
+            await syncWithCloudDatabase(); showToast("Gmail Token linked.", "success"); setDisplayLoader(false); 
+            pushViewToHistoryState("portal"); routeCurrentSessionState(true);
         }
 
         async function handleFormSubmit(e) {
@@ -1157,14 +1133,6 @@
             }
         }
 
-        async function handleAuthSubmit(e) {
-            e.preventDefault(); const email = document.getElementById('auth-email').value.trim();
-            if (!email.toLowerCase().endsWith('@gmail.com')) { showToast("Identity Error: Requires a valid @gmail.com address.", "error"); return; }
-            setDisplayLoader(true); session.authenticatedEmail = email;
-            await syncWithCloudDatabase(); showToast("Gmail Token linked.", "success"); setDisplayLoader(false); 
-            pushViewToHistoryState("portal"); routeCurrentSessionState(true);
-        }
-
         async function handleLogin(event) {
             event.preventDefault(); const role = document.getElementById('login-role').value; const password = document.getElementById('login-password').value;
             if((role === 'Head Operator' && password === 'head_admin#rc99') || (role === 'Operator' && password === 'operator_clearance@77')) {
@@ -1172,36 +1140,6 @@
                 await syncWithCloudDatabase(); await pushLog(`Administrative session token verified successfully.`, role); setDisplayLoader(false); 
                 pushViewToHistoryState("dashboard"); routeCurrentSessionState(true);
             } else { document.getElementById('login-error').classList.remove('hidden'); }
-        }
-
-        function openStaffGateway() { 
-            document.getElementById('view-auth').classList.add('hidden'); document.getElementById('view-login').classList.remove('hidden'); document.getElementById('global-back-nav').classList.remove('hidden'); 
-            pushViewToHistoryState("login");
-        }
-
-        function logout() {
-            if (session.managementRole) { pushLog(`Administrative terminal node released safely.`, session.managementRole); }
-            session.authenticatedEmail = null; session.managementRole = null; showToast("Logged out successfully.", "info");
-            pushViewToHistoryState("auth"); routeCurrentSessionState(true);
-        }
-
-        async function pushLog(message, actor) {
-            const now = new Date(); const timestamp = now.toISOString().replace('T', ' ').substring(0, 19);
-            try { await supabaseClient.from('logs').insert([{ custom_timestamp: timestamp, message, actor }]); } catch(e) {}
-            db.logs.unshift({ timestamp, message, actor });
-        }
-
-        function updateStats() {
-            const pending = db.applicants.filter(a => a && a.status === 'Pending').length;
-            const approved = db.applicants.filter(a => a && a.status === 'Approved').length;
-            const rejected = db.applicants.filter(a => a && a.status === 'Rejected').length;
-            let totalWarnings = 0; const approvedNames = db.applicants.filter(a => a && a.status === 'Approved').map(a => a.discordName);
-            approvedNames.forEach(dName => { if(dName) totalWarnings += (db.warnings[dName] || 0); });
-            
-            const pEl = document.getElementById('stat-pending'); if(pEl) pEl.innerText = pending;
-            const aEl = document.getElementById('stat-approved'); if(aEl) aEl.innerText = approved;
-            const rEl = document.getElementById('stat-rejected'); if(rEl) rEl.innerText = rejected;
-            const wEl = document.getElementById('stat-warnings'); if(wEl) wEl.innerText = totalWarnings;
         }
 
         async function updateStatus(id, newStatus) {
@@ -1294,7 +1232,6 @@
             const modal = document.getElementById('info-modal');
             if(modal) modal.classList.remove('hidden');
         }
-        function closeInfoModal() { document.getElementById('info-modal').classList.add('hidden'); }
 
         function switchDashTab(tabName) {
             document.getElementById('dash-tab-applicants').classList.add('hidden'); document.getElementById('dash-tab-staff').classList.add('hidden'); document.getElementById('dash-tab-logs').classList.add('hidden'); document.getElementById('dash-tab-announcements').classList.add('hidden'); document.getElementById('dash-tab-resignations').classList.add('hidden'); document.getElementById('dash-tab-pollMetrics').classList.add('hidden');
