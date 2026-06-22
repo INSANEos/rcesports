@@ -274,7 +274,8 @@
                     <i class="fa-solid fa-bullhorn mr-2"></i> Official Core Announcements
                 </h3>
                 <div id="staff-announcements-box" class="space-y-3 max-h-60 overflow-y-auto custom-scrollbar pr-1 text-xs">
-                    </div>
+                    <p class="text-cyber-textMuted text-center py-4">No broadcasts posted yet.</p>
+                </div>
             </div>
 
             <div class="bg-gradient-to-b from-cyber-surface to-[#0e1017] border border-cyber-border rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-2xl space-y-6">
@@ -571,17 +572,27 @@
                 <div id="admin-resignations-stream" class="space-y-3 max-h-[450px] overflow-y-auto custom-scrollbar text-xs"></div>
             </div>
 
-            <div id="dash-tab-announcements" class="hidden bg-cyber-surface border border-cyber-border rounded-xl p-6 space-y-4">
-                <h3 class="heading-cyber text-sm font-bold text-white">Publish New BroadCast</h3>
-                <form onsubmit="postAnnouncement(event)" class="space-y-3 text-xs">
-                    <input type="text" id="announce-title" required class="w-full bg-cyber-card border border-cyber-border rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-cyber-neon" placeholder="Announcement Title...">
-                    <textarea id="announce-content" required rows="3" class="w-full bg-cyber-card border border-cyber-border rounded-xl p-4 text-white focus:outline-none focus:border-cyber-neon" placeholder="Write message summary here..."></textarea>
-                    <div>
-                        <label class="block text-xs font-medium text-cyber-textMuted uppercase mb-1">Optional Announcement Cover Photo URL</label>
-                        <input type="url" id="announce-image-url" class="w-full bg-cyber-card border border-cyber-border rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-cyber-neon" placeholder="https://images.unsplash.com/... or discord attachment link">
+            <div id="dash-tab-announcements" class="hidden bg-cyber-surface border border-cyber-border rounded-xl p-6 space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-1 bg-cyber-card/40 p-4 border border-cyber-border rounded-xl h-fit space-y-4">
+                        <h3 class="heading-cyber text-xs font-bold text-white uppercase tracking-wider text-cyber-neon"><i class="fa-solid fa-plus-circle mr-1"></i>Publish New Broadcast</h3>
+                        <form onsubmit="postAnnouncement(event)" class="space-y-3 text-xs">
+                            <input type="text" id="announce-title" required class="w-full bg-cyber-card border border-cyber-border rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-cyber-neon" placeholder="Announcement Title...">
+                            <textarea id="announce-content" required rows="3" class="w-full bg-cyber-card border border-cyber-border rounded-xl p-4 text-white focus:outline-none focus:border-cyber-neon" placeholder="Write message summary here..."></textarea>
+                            <div>
+                                <label class="block text-[10px] text-cyber-textMuted uppercase mb-1">Optional Cover Photo URL</label>
+                                <input type="url" id="announce-image-url" class="w-full bg-cyber-card border border-cyber-border rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-cyber-neon" placeholder="https://images.unsplash.com/...">
+                            </div>
+                            <button type="submit" class="w-full bg-cyber-neon hover:bg-cyber-neonHover text-black py-2.5 rounded-xl font-bold uppercase transition">Broadcast Protocol</button>
+                        </form>
                     </div>
-                    <button type="submit" class="bg-cyber-neon hover:bg-cyber-neonHover text-black px-5 py-2.5 rounded-xl font-bold uppercase transition">Broadcast Protocol</button>
-                </form>
+
+                    <div class="lg:col-span-2 space-y-3">
+                        <h3 class="heading-cyber text-xs font-bold text-white uppercase tracking-wider flex items-center"><i class="fa-solid fa-clock-history text-amber-500 mr-2"></i>Broadcast History Log Archive</h3>
+                        <div id="admin-announcements-history-container" class="space-y-3 max-h-[500px] overflow-y-auto custom-scrollbar pr-1">
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div id="dash-tab-logs" class="hidden bg-cyber-surface border border-cyber-border rounded-xl p-6 space-y-4">
@@ -629,7 +640,7 @@
         let session = { authenticatedEmail: null, managementRole: null };
         let runtime_selectedPosition = null;
         let activeAdminChatStaffId = null;
-        let lastReadMessageIdMap = {}; // Tracks read state locally to render chat notification dots
+        let lastReadMessageIdMap = {}; 
 
         let activeViewTracker = "auth"; 
         let backgroundSyncTimerId = null;
@@ -637,11 +648,14 @@
         window.addEventListener('DOMContentLoaded', async () => {
             setDisplayLoader(true);
             await syncWithCloudDatabase();
+            
+            // Mark all existing messages read on clean boot up sequence
+            db.staffMessages.forEach(m => { if(m) lastReadMessageIdMap[m.id] = true; });
+            
             window.history.replaceState({ activeView: "auth" }, "");
             setDisplayLoader(false);
             routeCurrentSessionState();
             
-            // Start background sync interval every 4 seconds to solve the announcement and text-feed freeze
             backgroundSyncTimerId = setInterval(async () => {
                 await syncWithCloudDatabase();
                 autoRefreshActiveViews();
@@ -649,9 +663,17 @@
         });
 
         function autoRefreshActiveViews() {
+            if (session.authenticatedEmail) {
+                const approvedView = document.getElementById('view-approved');
+                if (approvedView && !approvedView.classList.contains('hidden')) {
+                    renderStaffAnnouncements();
+                    const record = db.applicants.find(a => a && a.email && String(a.email).toLowerCase() === String(session.authenticatedEmail).toLowerCase());
+                    if (record) renderStaffChatStream(record.id);
+                }
+            }
+
             if(session.managementRole) {
                 updateStats();
-                // Check currently open active dashboard sub-tabs to refresh without locking layout state
                 const staffTab = document.getElementById('dash-tab-staff');
                 const announceTab = document.getElementById('dash-tab-announcements');
                 const resignTab = document.getElementById('dash-tab-resignations');
@@ -660,16 +682,16 @@
                 if(announceTab && !announceTab.classList.contains('hidden')) renderStaffAnnouncements();
                 if(resignTab && !resignTab.classList.contains('hidden')) renderAdminResignationsStream();
                 
-                renderGlobalChatBadge();
-                if(activeAdminChatStaffId) renderAdminChatStream();
-            }
-            if(session.authenticatedEmail) {
-                const approvedView = document.getElementById('view-approved');
-                if(approvedView && !approvedView.classList.contains('hidden')) {
-                    renderStaffAnnouncements();
-                    const record = db.applicants.find(a => a && a.email && String(a.email).toLowerCase() === String(session.authenticatedEmail).toLowerCase());
-                    if(record) renderStaffChatStream(record.id);
+                // Keep setting read offset if user keeps direct message modal window open
+                if(activeAdminChatStaffId) {
+                    db.staffMessages.forEach(m => {
+                        if(m && m.staff_id == activeAdminChatStaffId) {
+                            lastReadMessageIdMap[m.id] = true;
+                        }
+                    });
+                    renderAdminChatStream();
                 }
+                renderGlobalChatBadge();
             }
         }
 
@@ -686,11 +708,8 @@
                 }
             });
             
-            if(hasUnread) {
-                badge.classList.remove('hidden');
-            } else {
-                badge.classList.add('hidden');
-            }
+            if(hasUnread) badge.classList.remove('hidden');
+            else badge.classList.add('hidden');
         }
 
         window.addEventListener('popstate', (event) => {
@@ -951,29 +970,47 @@
         }
 
         function renderStaffAnnouncements() {
-            const container = document.getElementById('staff-announcements-box'); if(!container) return; container.innerHTML = "";
-            if(db.announcements.length === 0) { container.innerHTML = `<p class="text-cyber-textMuted text-center py-4">No broadcasts posted yet.</p>`; return; }
-            db.announcements.forEach(a => {
-                let deleteBtn = '';
-                if (session.managementRole === 'Head Operator' || session.managementRole === 'Operator') {
-                    deleteBtn = `<button onclick="deleteAnnouncementNode(${a.id})" class="text-rose-400 hover:text-rose-600 font-bold transition text-[11px] uppercase tracking-wider"><i class="fa-solid fa-trash-can mr-1"></i>Delete</button>`;
+            const staffBox = document.getElementById('staff-announcements-box');
+            if (staffBox) {
+                staffBox.innerHTML = "";
+                if (db.announcements.length === 0) {
+                    staffBox.innerHTML = `<p class="text-cyber-textMuted text-center py-4">No broadcasts posted yet.</p>`;
+                } else {
+                    db.announcements.forEach(a => {
+                        let imgTag = a.image_url ? `<div class="mt-2 rounded-xl overflow-hidden max-h-48 border border-cyber-border/40 bg-black/30"><img src="${escapeHtml(a.image_url)}" class="w-full h-full object-contain"></div>` : '';
+                        staffBox.innerHTML += `
+                            <div class="bg-cyber-card p-3.5 border border-cyber-border rounded-xl space-y-1.5 shadow-md">
+                                <div class="flex justify-between items-center border-b border-cyber-border/50 pb-1">
+                                    <strong class="text-white font-bold text-xs">${escapeHtml(a.title)}</strong>
+                                    <span class="text-[10px] text-cyber-neon font-mono">@${escapeHtml(a.author)}</span>
+                                </div>
+                                <p class="text-slate-300 text-[11px] leading-relaxed whitespace-pre-wrap">${escapeHtml(a.content)}</p>
+                                ${imgTag}
+                            </div>`;
+                    });
                 }
+            }
 
-                let imageEl = '';
-                if(a.image_url) {
-                    imageEl = `<div class="mt-2.5 rounded-xl overflow-hidden border border-cyber-border max-h-48 bg-black/40"><img src="${escapeHtml(a.image_url)}" class="w-full h-full object-contain" alt="Broadcast Asset Image"></div>`;
+            const historyContainer = document.getElementById('admin-announcements-history-container');
+            if (historyContainer) {
+                historyContainer.innerHTML = "";
+                if (db.announcements.length === 0) {
+                    historyContainer.innerHTML = `<div class="p-6 bg-cyber-bg border border-cyber-border border-dashed text-center text-cyber-textMuted text-xs rounded-xl">No active announcements stored inside database shell indexes.</div>`;
+                } else {
+                    db.announcements.forEach(a => {
+                        let imagePreviewNode = a.image_url ? `<div class="mt-2 rounded-xl overflow-hidden border border-cyber-border max-h-40 bg-black/40"><img src="${escapeHtml(a.image_url)}" class="w-full h-full object-contain" alt="Broadcast Asset Image"></div>` : '';
+                        historyContainer.innerHTML += `
+                            <div class="p-4 bg-cyber-card border border-cyber-border rounded-xl space-y-2 shadow-lg relative group">
+                                <div class="flex justify-between items-center border-b border-cyber-border/60 pb-1.5">
+                                    <div><strong class="text-white font-bold text-sm">${escapeHtml(a.title)}</strong><span class="text-[10px] text-cyber-neon font-mono ml-2">By: @${escapeHtml(a.author)}</span></div>
+                                    <button onclick="deleteAnnouncementNode(${a.id})" class="text-rose-400 hover:text-rose-600 font-bold transition text-[11px] uppercase tracking-wider flex items-center gap-1"><i class="fa-solid fa-trash-can"></i> Purge Block</button>
+                                </div>
+                                <p class="text-slate-300 leading-relaxed text-xs whitespace-pre-wrap">${escapeHtml(a.content)}</p>
+                                ${imagePreviewNode}
+                            </div>`;
+                    });
                 }
-
-                container.innerHTML += `
-                    <div class="bg-cyber-card p-4 rounded-xl border border-cyber-border space-y-2">
-                        <div class="flex justify-between items-center border-b border-cyber-border/60 pb-1.5">
-                            <div><strong class="text-white font-bold text-sm">${escapeHtml(a.title)}</strong><span class="text-[10px] text-cyber-neon font-mono ml-2">@${a.author}</span></div>
-                            ${deleteBtn}
-                        </div>
-                        <p class="text-slate-300 leading-relaxed text-xs">${escapeHtml(a.content)}</p>
-                        ${imageEl}
-                    </div>`;
-            });
+            }
         }
 
         async function deleteAnnouncementNode(annId) {
@@ -996,15 +1033,25 @@
             const imageUrl = document.getElementById('announce-image-url').value.trim();
             const author = session.managementRole;
 
+            let payload = { title: title, content: content, author: author };
+            if(imageUrl) {
+                payload.image_url = imageUrl;
+            }
+
             try {
-                await supabaseClient.from('announcements').insert([{ title, content, author, image_url: imageUrl || null }]);
+                const { error } = await supabaseClient.from('announcements').insert([payload]);
+                if(error) throw error;
+                
                 await pushLog(`New core broadcast posted: "${title}"`, author);
                 await syncWithCloudDatabase();
                 document.getElementById('announce-title').value = ""; document.getElementById('announce-content').value = "";
                 document.getElementById('announce-image-url').value = "";
                 showToast("Announcement live Broadcasted!", "success");
                 renderStaffAnnouncements();
-            } catch(err) { showToast("Broadcast protocol fail.", "error"); }
+            } catch(err) { 
+                console.error(err);
+                showToast("Broadcast failed. Structural syntax mismatch block.", "error"); 
+            }
             setDisplayLoader(false);
         }
 
@@ -1048,16 +1095,15 @@
             const titleEl = document.getElementById('admin-chat-title');
             if(titleEl) titleEl.innerText = `Direct Chat Terminal: @${staffName}`;
             
-            // Mark all existing messages from this staff as read
             db.staffMessages.forEach(m => {
-                if(m && m.staff_id == staffId && m.sender_role === 'STAFF') {
+                if(m && m.staff_id == staffId) {
                     lastReadMessageIdMap[m.id] = true;
                 }
             });
             
             renderAdminChatStream(); 
             renderGlobalChatBadge();
-            renderStaffTable(); // Refresh Roster table to dynamically clear target notification dot instantly
+            renderStaffTable(); 
             
             const modal = document.getElementById('admin-chat-modal');
             if(modal) modal.classList.remove('hidden');
@@ -1072,8 +1118,7 @@
                 const isAdmin = m.sender_role !== 'STAFF'; const textCol = isAdmin ? "text-sky-400" : "text-cyber-neon";
                 stream.innerHTML += `<div><span class="text-[10px] text-slate-500">[${m.sender_name}]</span> <p class="inline-block ml-1 ${textCol}">${escapeHtml(m.message_text)}</p></div>`;
                 
-                // Keep setting read state if new messages roll in while window chat is open
-                if(m.sender_role === 'STAFF') lastReadMessageIdMap[m.id] = true;
+                lastReadMessageIdMap[m.id] = true;
             });
             stream.scrollTop = stream.scrollHeight;
         }
@@ -1082,7 +1127,18 @@
             e.preventDefault(); const input = document.getElementById('admin-chat-input'); const msgText = input.value.trim(); if(!msgText || !activeAdminChatStaffId) return;
             try {
                 await supabaseClient.from('staff_messages').insert([{ staff_id: activeAdminChatStaffId, sender_role: session.managementRole, sender_name: session.managementRole, message_text: msgText }]);
-                await syncWithCloudDatabase(); renderAdminChatStream(); input.value = "";
+                
+                db.staffMessages.forEach(m => {
+                    if(m && m.staff_id == activeAdminChatStaffId) {
+                        lastReadMessageIdMap[m.id] = true;
+                    }
+                });
+
+                await syncWithCloudDatabase(); 
+                renderAdminChatStream(); 
+                renderGlobalChatBadge();
+                renderStaffTable();
+                input.value = "";
             } catch(err) { showToast("Failed to lock cloud msg.", "error"); }
         }
 
@@ -1528,7 +1584,6 @@
                     ? `<span class="text-amber-400 font-mono text-[11px]"><i class="fa-solid fa-calendar-day mr-1"></i>${staff.leaveFrom} To ${staff.leaveTo}</span>`
                     : `<span class="text-slate-500">--</span>`;
 
-                // Calculate WhatsApp/Telegram-style red/neon unread notification dot for specific staff index item
                 let hasUnreadMessagesFromThisStaff = false;
                 const staffMessagesList = db.staffMessages.filter(m => m && m.staff_id == staff.id && m.sender_role === 'STAFF');
                 staffMessagesList.forEach(m => {
