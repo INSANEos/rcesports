@@ -491,7 +491,7 @@
                     <i class="fa-solid fa-users-viewfinder mr-2 text-cyber-neon"></i> Recruitment Desk
                 </button>
                 <button onclick="switchDashTab('staff')" id="tab-staff-btn" class="flex-shrink-0 border-b-2 border-transparent text-cyber-textMuted hover:text-white text-sm font-bold pb-3 flex items-center px-1 transition">
-                    <i class="fa-solid fa-id-card-clip mr-2"></i> Roster Workspace
+                    <i class="fa-solid fa-id-card-clip mr-2 text-cyber-neon"></i> Roster Workspace <span id="global-chat-badge" class="ml-1 bg-rose-600 text-white rounded-full px-1.5 py-0.2 text-[9px] font-black hidden animate-pulse">!</span>
                 </button>
                 <button onclick="switchDashTab('pollMetrics')" id="tab-poll-btn" class="flex-shrink-0 border-b-2 border-transparent text-cyber-textMuted hover:text-white text-sm font-bold pb-3 flex items-center px-1 transition">
                     <i class="fa-solid fa-square-poll-vertical mr-2"></i> Live Perks Poll
@@ -629,8 +629,10 @@
         let session = { authenticatedEmail: null, managementRole: null };
         let runtime_selectedPosition = null;
         let activeAdminChatStaffId = null;
+        let lastReadMessageIdMap = {}; // Tracks read state locally to render chat notification dots
 
         let activeViewTracker = "auth"; 
+        let backgroundSyncTimerId = null;
 
         window.addEventListener('DOMContentLoaded', async () => {
             setDisplayLoader(true);
@@ -638,7 +640,58 @@
             window.history.replaceState({ activeView: "auth" }, "");
             setDisplayLoader(false);
             routeCurrentSessionState();
+            
+            // Start background sync interval every 4 seconds to solve the announcement and text-feed freeze
+            backgroundSyncTimerId = setInterval(async () => {
+                await syncWithCloudDatabase();
+                autoRefreshActiveViews();
+            }, 4000);
         });
+
+        function autoRefreshActiveViews() {
+            if(session.managementRole) {
+                updateStats();
+                // Check currently open active dashboard sub-tabs to refresh without locking layout state
+                const staffTab = document.getElementById('dash-tab-staff');
+                const announceTab = document.getElementById('dash-tab-announcements');
+                const resignTab = document.getElementById('dash-tab-resignations');
+                
+                if(staffTab && !staffTab.classList.contains('hidden')) renderStaffTable();
+                if(announceTab && !announceTab.classList.contains('hidden')) renderStaffAnnouncements();
+                if(resignTab && !resignTab.classList.contains('hidden')) renderAdminResignationsStream();
+                
+                renderGlobalChatBadge();
+                if(activeAdminChatStaffId) renderAdminChatStream();
+            }
+            if(session.authenticatedEmail) {
+                const approvedView = document.getElementById('view-approved');
+                if(approvedView && !approvedView.classList.contains('hidden')) {
+                    renderStaffAnnouncements();
+                    const record = db.applicants.find(a => a && a.email && String(a.email).toLowerCase() === String(session.authenticatedEmail).toLowerCase());
+                    if(record) renderStaffChatStream(record.id);
+                }
+            }
+        }
+
+        function renderGlobalChatBadge() {
+            const badge = document.getElementById('global-chat-badge');
+            if(!badge) return;
+            
+            let hasUnread = false;
+            db.staffMessages.forEach(m => {
+                if(m && m.sender_role === 'STAFF') {
+                    if(!lastReadMessageIdMap[m.id]) {
+                        hasUnread = true;
+                    }
+                }
+            });
+            
+            if(hasUnread) {
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
 
         window.addEventListener('popstate', (event) => {
             if (event.state && event.state.activeView) {
@@ -689,7 +742,7 @@
                 db.resignations = resResign.data || [];
 
             } catch (err) {
-                console.error("Database sync caught error, entering crash fallback", err);
+                console.error("Database sync caught error", err);
             }
         }
 
@@ -720,6 +773,7 @@
                 dName.innerText = session.managementRole; dRole.innerText = session.managementRole;
                 document.getElementById('view-dashboard').classList.remove('hidden');
                 updateStats(); renderApplicants(); renderStaffTable(); renderSystemLogs(); renderAdminResignationsStream(); compileAndRenderPollMetrics();
+                renderGlobalChatBadge();
                 return;
             }
 
@@ -993,7 +1047,18 @@
             activeAdminChatStaffId = staffId;
             const titleEl = document.getElementById('admin-chat-title');
             if(titleEl) titleEl.innerText = `Direct Chat Terminal: @${staffName}`;
+            
+            // Mark all existing messages from this staff as read
+            db.staffMessages.forEach(m => {
+                if(m && m.staff_id == staffId && m.sender_role === 'STAFF') {
+                    lastReadMessageIdMap[m.id] = true;
+                }
+            });
+            
             renderAdminChatStream(); 
+            renderGlobalChatBadge();
+            renderStaffTable(); // Refresh Roster table to dynamically clear target notification dot instantly
+            
             const modal = document.getElementById('admin-chat-modal');
             if(modal) modal.classList.remove('hidden');
         }
@@ -1006,6 +1071,9 @@
             filtered.forEach(m => {
                 const isAdmin = m.sender_role !== 'STAFF'; const textCol = isAdmin ? "text-sky-400" : "text-cyber-neon";
                 stream.innerHTML += `<div><span class="text-[10px] text-slate-500">[${m.sender_name}]</span> <p class="inline-block ml-1 ${textCol}">${escapeHtml(m.message_text)}</p></div>`;
+                
+                // Keep setting read state if new messages roll in while window chat is open
+                if(m.sender_role === 'STAFF') lastReadMessageIdMap[m.id] = true;
             });
             stream.scrollTop = stream.scrollHeight;
         }
@@ -1018,7 +1086,7 @@
             } catch(err) { showToast("Failed to lock cloud msg.", "error"); }
         }
 
-        function closeAdminChatModal() { document.getElementById('admin-chat-modal').classList.add('hidden'); activeAdminChatStaffId = null; }
+        function closeAdminChatModal() { document.getElementById('admin-chat-modal').classList.add('hidden'); activeAdminChatStaffId = null; renderGlobalChatBadge(); }
 
         function updateStaffWorkspaceButtons() {
             const record = db.applicants.find(a => a && a.email && String(a.email).toLowerCase() === String(session.authenticatedEmail).toLowerCase()); if (!record) return;
@@ -1173,7 +1241,7 @@
             const [h1, m1] = t1.split(':').map(Number);
             const [h2, m2] = t2.split(':').map(Number);
             let diffMins = (h2 * 60 + m2) - (h1 * 60 + m1);
-            if(diffMins < 0) diffMins += 24 * 60; // Handle midnight crossing
+            if(diffMins < 0) diffMins += 24 * 60; 
             return diffMins / 60;
         }
 
@@ -1183,7 +1251,7 @@
             let hours = parseInt(hourStr);
             const ampm = hours >= 12 ? 'pm' : 'am';
             hours = hours % 12;
-            hours = hours ? hours : 12; // conversion of 0 to 12
+            hours = hours ? hours : 12; 
             return `${hours}:${minStr}${ampm}`;
         }
 
@@ -1380,11 +1448,13 @@
                 document.getElementById('dash-tab-applicants').classList.remove('hidden'); document.getElementById('tab-applicants-btn').className = "flex-shrink-0 border-b-2 border-cyber-neon text-white text-sm font-bold pb-3 flex items-center px-1";
             } else if (tabName === 'staff') {
                 document.getElementById('dash-tab-staff').classList.remove('hidden'); document.getElementById('tab-staff-btn').className = "flex-shrink-0 border-b-2 border-cyber-neon text-white text-sm font-bold pb-3 flex items-center px-1";
+                renderStaffTable();
             } else if (tabName === 'announcements') {
                 document.getElementById('dash-tab-announcements').classList.remove('hidden'); document.getElementById('tab-announce-btn').className = "flex-shrink-0 border-b-2 border-cyber-neon text-white text-sm font-bold pb-3 flex items-center px-1";
                 renderStaffAnnouncements();
             } else if (tabName === 'logs') {
                 document.getElementById('dash-tab-logs').classList.remove('hidden'); document.getElementById('tab-logs-btn').className = "flex-shrink-0 border-b-2 border-cyber-neon text-white text-sm font-bold pb-3 flex items-center px-1";
+                renderSystemLogs();
             } else if (tabName === 'resignations') {
                 document.getElementById('dash-tab-resignations').classList.remove('hidden'); document.getElementById('tab-resign-btn').className = "flex-shrink-0 border-b-2 border-cyber-neon text-white text-sm font-bold pb-3 flex items-center px-1";
                 renderAdminResignationsStream();
@@ -1458,13 +1528,29 @@
                     ? `<span class="text-amber-400 font-mono text-[11px]"><i class="fa-solid fa-calendar-day mr-1"></i>${staff.leaveFrom} To ${staff.leaveTo}</span>`
                     : `<span class="text-slate-500">--</span>`;
 
+                // Calculate WhatsApp/Telegram-style red/neon unread notification dot for specific staff index item
+                let hasUnreadMessagesFromThisStaff = false;
+                const staffMessagesList = db.staffMessages.filter(m => m && m.staff_id == staff.id && m.sender_role === 'STAFF');
+                staffMessagesList.forEach(m => {
+                    if(!lastReadMessageIdMap[m.id]) {
+                        hasUnreadMessagesFromThisStaff = true;
+                    }
+                });
+
+                const notificationDot = hasUnreadMessagesFromThisStaff 
+                    ? `<span class="absolute -top-1 -right-1 flex h-2.5 w-2.5"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span></span>`
+                    : '';
+
                 tbody.innerHTML += `
                     <tr class="hover:bg-cyber-card/30 transition">
                         <td class="p-4">
                             <div class="flex items-center space-x-2">
                                 <strong class="text-white">${escapeHtml(staff.discordName)}</strong>
                                 <button onclick="viewEmployeeDossier(${staff.id})" class="px-2 py-0.5 rounded bg-cyber-neon/10 hover:bg-cyber-neon border border-cyber-neon/20 hover:text-black text-cyber-neon text-[10px] font-black uppercase transition"><i class="fa-solid fa-address-card mr-1"></i>Info</button>
-                                <button onclick="openAdminChatBox(${staff.id}, '${escapeHtml(staff.discordName)}')" class="px-2 py-0.5 bg-sky-500/10 hover:bg-sky-500 text-sky-400 hover:text-black border border-sky-500/20 text-[10px] font-bold uppercase rounded transition"><i class="fa-solid fa-message mr-1"></i>Chat DM</button>
+                                <div class="relative inline-block">
+                                    <button onclick="openAdminChatBox(${staff.id}, '${escapeHtml(staff.discordName)}')" class="px-2 py-0.5 bg-sky-500/10 hover:bg-sky-500 text-sky-400 hover:text-black border border-sky-500/20 text-[10px] font-bold uppercase rounded transition"><i class="fa-solid fa-message mr-1"></i>Chat DM</button>
+                                    ${notificationDot}
+                                </div>
                             </div>
                         </td>
                         <td class="p-4"><span class="bg-cyber-card border border-cyber-border px-2 py-0.5 rounded text-[10px] text-cyber-neon font-mono font-semibold uppercase">${escapeHtml(staff.position)}</span></td>
