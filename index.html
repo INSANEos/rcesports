@@ -368,7 +368,7 @@
                         <i class="fa-solid fa-link mr-2"></i> Management Command Links
                     </h3>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <a href="https://chat.whatsapp.com/KqRIaEnNdd28BycpSpX3wN?s=cl&p=a&mlu=2&amv=0" target="_blank" class="flex items-center justify-between p-3.5 bg-cyber-surface border border-cyber-border hover:border-cyber-neon rounded-xl transition group">
+                        <a href="https://chat.whatsapp.com/KaQpWOhgjHp4NUyA5QqQxu?s=cl&p=a&mlu=2&amv=0" target="_blank" class="flex items-center justify-between p-3.5 bg-cyber-surface border border-cyber-border hover:border-cyber-neon rounded-xl transition group">
                             <span class="text-xs font-medium text-slate-200 group-hover:text-white"><i class="fa-solid fa-calendar-check text-emerald-400 mr-2"></i> Daily Scheduling Operations</span>
                             <i class="fa-solid fa-up-right-from-square text-xs text-cyber-textMuted group-hover:text-cyber-neon"></i>
                         </a>
@@ -649,7 +649,6 @@
             setDisplayLoader(true);
             await syncWithCloudDatabase();
             
-            // Mark all existing messages read on clean boot up sequence
             db.staffMessages.forEach(m => { if(m) lastReadMessageIdMap[m.id] = true; });
             
             window.history.replaceState({ activeView: "auth" }, "");
@@ -682,7 +681,6 @@
                 if(announceTab && !announceTab.classList.contains('hidden')) renderStaffAnnouncements();
                 if(resignTab && !resignTab.classList.contains('hidden')) renderAdminResignationsStream();
                 
-                // Keep setting read offset if user keeps direct message modal window open
                 if(activeAdminChatStaffId) {
                     db.staffMessages.forEach(m => {
                         if(m && m.staff_id == activeAdminChatStaffId) {
