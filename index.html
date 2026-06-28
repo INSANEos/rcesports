@@ -47,6 +47,16 @@
         <p class="heading-cyber text-xs font-bold text-cyber-neon uppercase tracking-widest">Synchronizing Live Database...</p>
     </div>
 
+    <!-- Full-Screen Blink Overlay for Staff Members with Over Leaves -->
+    <div id="staff-leave-over-overlay" class="fixed inset-0 bg-rose-950/90 z-[90] flex flex-col items-center justify-center space-y-4 px-4 text-center hidden animate-pulse">
+        <div class="w-20 h-20 bg-rose-500/20 border-2 border-rose-500 rounded-full flex items-center justify-center text-rose-400 text-3xl shadow-lg shadow-rose-500/30">
+            <i class="fa-solid fa-business-time"></i>
+        </div>
+        <h2 class="heading-cyber text-2xl font-black text-white tracking-wide uppercase">Operational Leave Over</h2>
+        <p class="text-slate-300 text-xs max-w-sm leading-relaxed">Your scheduled timeline log allocation has ended. You must release the scheduler lock and reset your operational footprint back to active duty state track configuration.</p>
+        <button onclick="dismissStaffLeaveExpirationBlock()" class="bg-cyber-neon hover:bg-cyber-neonHover text-black text-xs font-black uppercase px-6 py-3 rounded-xl shadow-lg transition-all tracking-wider">Acknowledge & Reactivate Profile</button>
+    </div>
+
     <nav class="bg-cyber-surface border-b border-cyber-border sticky top-0 z-50 px-4 lg:px-8 py-3 flex items-center justify-between">
         <div class="flex items-center space-x-3">
             <div class="relative w-12 h-12 flex items-center justify-center bg-cyber-card border border-cyber-neon/40 rounded-xl overflow-hidden shadow-md shadow-cyber-neon/5">
@@ -641,6 +651,7 @@
         let runtime_selectedPosition = null;
         let activeAdminChatStaffId = null;
         let lastReadMessageIdMap = {}; 
+        let acknowledgedExpiredLeavesMap = {}; // Local memory registry to display admin alerts strictly ONLY ONE TIME
 
         let activeViewTracker = "auth"; 
         let backgroundSyncTimerId = null;
@@ -661,13 +672,29 @@
             }, 4000);
         });
 
+        // Safe evaluation helper to track leave endpoints relative to current timestamp data
+        function isLeaveOverloadedAndExpired(toDateStr) {
+            if(!toDateStr) return false;
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const targetLeaveDate = new Date(toDateStr);
+            targetLeaveDate.setHours(0,0,0,0);
+            return today > targetLeaveDate;
+        }
+
         function autoRefreshActiveViews() {
             if (session.authenticatedEmail) {
                 const approvedView = document.getElementById('view-approved');
                 if (approvedView && !approvedView.classList.contains('hidden')) {
                     renderStaffAnnouncements();
                     const record = db.applicants.find(a => a && a.email && String(a.email).toLowerCase() === String(session.authenticatedEmail).toLowerCase());
-                    if (record) renderStaffChatStream(record.id);
+                    if (record) {
+                        renderStaffChatStream(record.id);
+                        // Trigger real-time layout block if staff leave expired
+                        if(record.leaveTo && isLeaveOverloadedAndExpired(record.leaveTo)) {
+                            document.getElementById('staff-leave-over-overlay').classList.remove('hidden');
+                        }
+                    }
                 }
             }
 
@@ -691,6 +718,26 @@
                 }
                 renderGlobalChatBadge();
             }
+        }
+
+        async function dismissStaffLeaveExpirationBlock() {
+            setDisplayLoader(true);
+            const record = db.applicants.find(a => a && a.email && String(a.email).toLowerCase() === String(session.authenticatedEmail).toLowerCase());
+            if (record) {
+                try {
+                    // Erase stale leaves data fields and force duty back online
+                    await supabaseClient.from('applicants').update({ leaveFrom: null, leaveTo: null, isActive: true }).eq('id', record.id);
+                    document.getElementById('leave-from').value = ''; 
+                    document.getElementById('leave-to').value = '';
+                    document.getElementById('staff-leave-over-overlay').classList.add('hidden');
+                    
+                    await pushLog(`Staff member "${record.discordName || 'Staff'}" acknowledged over leave period block and re-entered active duty roster pipeline.`, 'STAFF');
+                    showToast("Profile footprint synchronized back to Active duty status tracker.", "success");
+                    await syncWithCloudDatabase();
+                    routeCurrentSessionState(true);
+                } catch(e) { showToast("Cloud mutations failed to drop leave locks.", "error"); }
+            }
+            setDisplayLoader(false);
         }
 
         function renderGlobalChatBadge() {
@@ -765,6 +812,7 @@
 
         function goBackToMain() {
             session.authenticatedEmail = null; session.managementRole = null;
+            document.getElementById('staff-leave-over-overlay').classList.add('hidden');
             showToast("Returned safely to main node identity check.", "info");
             pushViewToHistoryState("auth"); routeCurrentSessionState(true);
         }
@@ -776,6 +824,7 @@
             document.getElementById('view-approved').classList.add('hidden');
             document.getElementById('view-login').classList.add('hidden');
             document.getElementById('view-dashboard').classList.add('hidden');
+            document.getElementById('staff-leave-over-overlay').classList.add('hidden');
 
             const profile = document.getElementById('nav-profile');
             const dName = document.getElementById('user-display-name');
@@ -816,6 +865,11 @@
                     document.getElementById('leave-from').value = record.leaveFrom || '';
                     document.getElementById('leave-to').value = record.leaveTo || '';
                     
+                    if(record.leaveTo) {
+                        const clearBtn = document.getElementById('clear-leave-btn');
+                        if(clearBtn) clearBtn.classList.remove('hidden');
+                    }
+
                     const strikeCount = db.warnings[record.discordName] || 0;
                     document.getElementById('employee-strike-count').innerText = `${strikeCount} / 3 Strikes`;
                     
@@ -833,6 +887,11 @@
                     
                     document.getElementById('view-approved').classList.remove('hidden');
                     
+                    // Verify if leave expired right at login checkpoint execution
+                    if(record.leaveTo && isLeaveOverloadedAndExpired(record.leaveTo)) {
+                        document.getElementById('staff-leave-over-overlay').classList.remove('hidden');
+                    }
+
                     updateStaffWorkspaceButtons(); renderStaffAnnouncements(); renderStaffChatStream(record.id); renderStaffDirectory();
                 } else {
                     if(!bypassHistoryPush && activeViewTracker !== "portal") pushViewToHistoryState("portal");
@@ -935,36 +994,6 @@
                         </div>
                     </div>`;
             });
-        }
-
-        async function approveResignationRelease(resId, staffDiscord) {
-            if(!confirm(`Confirm release approval for @${staffDiscord}? This changes status to Terminated.`)) return;
-            setDisplayLoader(true);
-            try {
-                const staffRecord = db.applicants.find(a => a && a.discordName === staffDiscord);
-                if(staffRecord) {
-                    await supabaseClient.from('applicants').update({ status: 'Rejected' }).eq('id', staffRecord.id);
-                }
-                await supabaseClient.from('resignations').delete().eq('id', resId);
-                await pushLog(`Resignation approved and finalized for @${staffDiscord}.`, session.managementRole);
-                await syncWithCloudDatabase();
-                updateStats(); renderStaffTable(); renderAdminResignationsStream();
-                showToast("Release configuration archived successfully.", "success");
-            } catch(e) { showToast("Error executing release action.", "error"); }
-            setDisplayLoader(false);
-        }
-
-        async function deleteResignationNotice(resId) {
-            if(!confirm("Are you sure you want to completely delete this resignation file notice?")) return;
-            setDisplayLoader(true);
-            try {
-                await supabaseClient.from('resignations').delete().eq('id', resId);
-                await pushLog(`Resignation notice file removed from database logs.`, 'Head Operator');
-                await syncWithCloudDatabase();
-                renderAdminResignationsStream();
-                showToast("Notice track successfully removed.", "info");
-            } catch(e) { showToast("Error wiping file record.", "error"); }
-            setDisplayLoader(false);
         }
 
         function renderStaffAnnouncements() {
@@ -1159,6 +1188,11 @@
         async function toggleStaffDuty(status) {
             const record = db.applicants.find(a => a && a.email && String(a.email).toLowerCase() === String(session.authenticatedEmail).toLowerCase());
             if (record) {
+                // Prevent toggle loop execution if user has an expired leave lock active
+                if(record.leaveTo && isLeaveOverloadedAndExpired(record.leaveTo)) {
+                    showToast("Action Aborted: Please release expired operational leave parameters first.", "error");
+                    return;
+                }
                 setDisplayLoader(true); record.isActive = status;
                 try {
                     await supabaseClient.from('applicants').update({ isActive: status }).eq('id', record.id);
@@ -1290,31 +1324,16 @@
             if(formCont) formCont.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
-        function calculateTimeDifferenceInHours(t1, t2) {
-            if(!t1 || !t2) return 0;
-            const [h1, m1] = t1.split(':').map(Number);
-            const [h2, m2] = t2.split(':').map(Number);
-            let diffMins = (h2 * 60 + m2) - (h1 * 60 + m1);
-            if(diffMins < 0) diffMins += 24 * 60; 
-            return diffMins / 60;
-        }
-
-        function formatTimeStringToAmPm(timeStr) {
-            if(!timeStr) return '';
-            const [hourStr, minStr] = timeStr.split(':');
-            let hours = parseInt(hourStr);
-            const ampm = hours >= 12 ? 'pm' : 'am';
-            hours = hours % 12;
-            hours = hours ? hours : 12; 
-            return `${hours}:${minStr}${ampm}`;
-        }
-
-        async function handleFormSubmit(e) {
+        function handleFormSubmit(e) {
             e.preventDefault(); const activeTimeInput = parseInt(document.getElementById('form-active-time').value);
             if (activeTimeInput < 2) { showToast("Submission Rejected: Minimum 2 hours requirement error.", "error"); return; }
-            setDisplayLoader(true); const chosenExpectation = document.querySelector('input[name="expectation"]:checked').value;
-            
+            setDisplayLoader(true); handleFormDataWriteSequence(activeTimeInput);
+        }
+
+        async function handleFormDataWriteSequence(activeTimeInput) {
+            const chosenExpectation = document.querySelector('input[name="expectation"]:checked').value;
             let extraTimelineData = "";
+            
             if(runtime_selectedPosition === 'Host') {
                 const s1Start = document.getElementById('host-s1-start').value;
                 const s1End = document.getElementById('host-s1-end').value;
@@ -1322,17 +1341,12 @@
                 const s2End = document.getElementById('host-s2-end') ? document.getElementById('host-s2-end').value : "";
 
                 if(calculateTimeDifferenceInHours(s1Start, s1End) < 2) {
-                    setDisplayLoader(false);
-                    showToast("Validation Aborted: Slot 1 timeline block must be flat 2 hours minimum.", "error");
-                    return;
+                    setDisplayLoader(false); showToast("Validation Aborted: Slot 1 timeline block must be flat 2 hours minimum.", "error"); return;
                 }
                 extraTimelineData = `${formatTimeStringToAmPm(s1Start)} - ${formatTimeStringToAmPm(s1End)}`;
-
                 if(s2Start && s2End) {
                     if(calculateTimeDifferenceInHours(s2Start, s2End) < 2) {
-                        setDisplayLoader(false);
-                        showToast("Validation Aborted: Slot 2 timeline block must be flat 2 hours minimum.", "error");
-                        return;
+                        setDisplayLoader(false); showToast("Validation Aborted: Slot 2 timeline block must be flat 2 hours minimum.", "error"); return;
                     }
                     extraTimelineData += ` | Slot 2: ${formatTimeStringToAmPm(s2Start)} - ${formatTimeStringToAmPm(s2End)}`;
                 }
@@ -1367,6 +1381,8 @@
             event.preventDefault(); const role = document.getElementById('login-role').value; const password = document.getElementById('login-password').value;
             if((role === 'Head Operator' && password === 'head_admin#rc99') || (role === 'Operator' && password === 'operator_clearance@77')) {
                 setDisplayLoader(true); session.managementRole = role; document.getElementById('view-login').classList.add('hidden');
+                // Erase local memory allocation history logs maps on clean admin session setup initiation
+                acknowledgedExpiredLeavesMap = {};
                 await syncWithCloudDatabase(); await pushLog(`Administrative session token verified successfully.`, role); setDisplayLoader(false); 
                 pushViewToHistoryState("dashboard"); routeCurrentSessionState(true);
             } else { document.getElementById('login-error').classList.remove('hidden'); }
@@ -1375,6 +1391,7 @@
         function logout() {
             if (session.managementRole) { pushLog(`Administrative terminal node released safely.`, session.managementRole); }
             session.authenticatedEmail = null; session.managementRole = null; showToast("Logged out successfully.", "info");
+            document.getElementById('staff-leave-over-overlay').classList.add('hidden');
             pushViewToHistoryState("auth"); routeCurrentSessionState(true);
         }
 
@@ -1487,6 +1504,10 @@
             const modal = document.getElementById('info-modal');
             if(modal) modal.classList.remove('hidden');
         }
+        function viewEmployeeDossierDismissAlert(id, dName) {
+            acknowledgedExpiredLeavesMap[dName] = true;
+            viewEmployeeDossier(id);
+        }
         function closeInfoModal() { document.getElementById('info-modal').classList.add('hidden'); }
 
         function switchDashTab(tabName) {
@@ -1578,9 +1599,21 @@
                     ? `<span class="bg-emerald-500/10 text-cyber-neon border border-cyber-neon/20 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"><i class="fa-solid fa-circle text-[8px] mr-1 animate-pulse"></i>Active</span>`
                     : `<span class="bg-rose-500/10 text-rose-400 border border-rose-500/20 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Inactive</span>`;
                 
-                const leaveDetails = (staff.leaveFrom && staff.leaveTo) 
-                    ? `<span class="text-amber-400 font-mono text-[11px]"><i class="fa-solid fa-calendar-day mr-1"></i>${staff.leaveFrom} To ${staff.leaveTo}</span>`
-                    : `<span class="text-slate-500">--</span>`;
+                // Evaluate if specific staff index item leaf over limits expired
+                const isLeaveExpired = staff.leaveTo && isLeaveOverloadedAndExpired(staff.leaveTo);
+                const hasBeenAcknowledgedByAdmin = acknowledgedExpiredLeavesMap[staff.discordName] === true;
+
+                let leaveDetails = `<span class="text-slate-500">--</span>`;
+                if(staff.leaveFrom && staff.leaveTo) {
+                    // Show a one-time blinking highlight badge strictly if not local acknowledged yet
+                    if(isLeaveExpired && !hasBeenAcknowledgedByAdmin) {
+                        leaveDetails = `<span onclick="viewEmployeeDossierDismissAlert(${staff.id}, '${escapeHtml(staff.discordName)}')" class="bg-rose-600/30 text-rose-400 border border-rose-500/50 px-2 py-1 rounded font-mono text-[10px] font-black uppercase tracking-wider cursor-pointer animate-bounce inline-flex items-center"><i class="fa-solid fa-triangle-exclamation mr-1 animate-pulse"></i> Leave Over Alert !</span>`;
+                    } else if(isLeaveExpired && hasBeenAcknowledgedByAdmin) {
+                        leaveDetails = `<span class="text-rose-500 font-mono text-[11px] line-through opacity-60"><i class="fa-solid fa-calendar-xmark mr-1"></i>Over: ${staff.leaveTo}</span>`;
+                    } else {
+                        leaveDetails = `<span class="text-amber-400 font-mono text-[11px]"><i class="fa-solid fa-calendar-day mr-1"></i>${staff.leaveFrom} To ${staff.leaveTo}</span>`;
+                    }
+                }
 
                 let hasUnreadMessagesFromThisStaff = false;
                 const staffMessagesList = db.staffMessages.filter(m => m && m.staff_id == staff.id && m.sender_role === 'STAFF');
