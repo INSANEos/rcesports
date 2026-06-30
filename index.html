@@ -47,7 +47,6 @@
         <p class="heading-cyber text-xs font-bold text-cyber-neon uppercase tracking-widest">Synchronizing Live Database...</p>
     </div>
 
-    <!-- Full-Screen Blink Overlay for Staff Members with Over Leaves -->
     <div id="staff-leave-over-overlay" class="fixed inset-0 bg-rose-950/90 z-[90] flex flex-col items-center justify-center space-y-4 px-4 text-center hidden animate-pulse">
         <div class="w-20 h-20 bg-rose-500/20 border-2 border-rose-500 rounded-full flex items-center justify-center text-rose-400 text-3xl shadow-lg shadow-rose-500/30">
             <i class="fa-solid fa-business-time"></i>
@@ -645,6 +644,31 @@
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlwcHhjdmNvdXlqb2hjeHBwbGxtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NDczMDAsImV4cCI6MjA5NzUyMzMwMH0.tWJIoV0ZflTFSX-qHlbvi-vIAzsS78hQ52rpyaX-14U";
         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // --- MISSING FUNCTIONS ADDED HERE ---
+        function calculateTimeDifferenceInHours(start, end) {
+            if (!start || !end) return 0;
+            const [startHour, startMin] = start.split(':').map(Number);
+            const [endHour, endMin] = end.split(':').map(Number);
+            
+            let diff = (endHour + (endMin / 60)) - (startHour + (startMin / 60));
+            
+            if (diff < 0) {
+                diff += 24; 
+            }
+            return diff;
+        }
+
+        function formatTimeStringToAmPm(timeStr) {
+            if (!timeStr) return "";
+            let [hour, minute] = timeStr.split(':');
+            hour = parseInt(hour);
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            hour = hour % 12;
+            hour = hour ? hour : 12; 
+            return `${hour}:${minute} ${ampm}`;
+        }
+        // ------------------------------------
 
         let db = { applicants: [], warnings: {}, logs: [], announcements: [], staffMessages: [], resignations: [] };
         let session = { authenticatedEmail: null, managementRole: null };
